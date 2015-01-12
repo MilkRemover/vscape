@@ -363,6 +363,7 @@ public class ActionSender {
 		out.writeByte(0 >> 8);
 		out.writeByte(0);
 		player.send(out.getBuffer());
+		player.setHintIndex(id);
 		return this;
 	}
 
@@ -722,7 +723,7 @@ public class ActionSender {
 	
 	public ActionSender sendIgnoreList(long[] ignores) {
 		if(ignores.length > 0){
-			StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(ignores.length);
+			StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(2048);
 			out.writeVariableShortPacketHeader(player.getEncryptor(), 214);
 			for (long ignore : ignores) {
 				if(ignore > 0)

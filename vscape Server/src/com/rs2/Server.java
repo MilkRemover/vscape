@@ -175,6 +175,7 @@ public class Server implements Runnable {
             GlobalVariables.degradeInfo = Misc.loadDegradeInfo();
             GlobalVariables.npcDump = Misc.getNpcDump();
             GlobalVariables.itemDump = Misc.getItemDump();
+	    Misc.initAlphabet();
 
 
 			// load all xstream related files.
@@ -216,7 +217,7 @@ public class Server implements Runnable {
 			 AlchemistPlayground.loadAlchemistPlayGround();
 			 EnchantingChamber.loadEnchantingChamber();
 			 CreatureGraveyard.loadCreatureGraveyard();
-
+			 TelekineticTheatre.loadTelekineticTheatre();
 			// spawning world fishing spots
 			FishingSpots.spawnFishingSpots();
 			
@@ -327,7 +328,7 @@ public class Server implements Runnable {
 				player.finishLogin();
 				player.setLoginStage(LoginStages.LOGGED_IN);
 			} catch (Exception ex) {
-				//ex.printStackTrace();
+				ex.printStackTrace();
 				System.out.println("Error, infinite DC loop for this player");
 				player.disconnect();
 			}

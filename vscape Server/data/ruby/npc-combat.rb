@@ -108,6 +108,14 @@ class Karil < NpcCombatDef
     end
 end
 
+class MonkeyArcher < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+			BasicAttack.rangedAttack(attacker, victim, AttackStyle::Mode::RAPID, 12, Weapon::MONKEY_BOW, RangedAmmo::MONKEY_ARROW)			
+        ];
+    end
+end
+
 class GreenDragon < NpcCombatDef
     def attackScripts attacker, victim
         return [
@@ -171,6 +179,19 @@ class BlackDragon < NpcCombatDef
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 21, 5, 80),
 			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
 			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+        ];
+    end
+end
+
+class KingBlackDragon < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 26, 5, 80),
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 393, ProjectileTrajectory.SPELL),
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 393, ProjectileTrajectory.SPELL),
+			BasicAttack.magicAttack(attacker, victim, Spell::KBD_POISON),
+			BasicAttack.magicAttack(attacker, victim, Spell::KBD_SHOCK),
+			BasicAttack.magicAttack(attacker, victim, Spell::KBD_FREEZE)
         ];
     end
 end
@@ -384,6 +405,18 @@ class KolodionFourthForm < NpcCombatDef
     end
 end
 
+class JungleDemon < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+			BasicAttack.magicAttack(attacker, victim, Spell::JUNGLE_DEMON_BLAST_1),
+			BasicAttack.magicAttack(attacker, victim, Spell::JUNGLE_DEMON_BLAST_2),
+			BasicAttack.magicAttack(attacker, victim, Spell::JUNGLE_DEMON_BLAST_3),
+			BasicAttack.magicAttack(attacker, victim, Spell::JUNGLE_DEMON_BLAST_4),
+                        BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 32, 5, 64),
+		];
+    end
+end
+
 NpcCombatDef.add([2025], Ahrims.new())
 NpcCombatDef.add([2028], Karil.new())
 NpcCombatDef.add([2746], YtHurkot.new()) #.bonusDef(1000, 1000, 1000, 1000, 600)
@@ -398,6 +431,7 @@ NpcCombatDef.add([5362], BrutalGreenDragon.new())
 NpcCombatDef.add([55], BlueDragon.new())
 NpcCombatDef.add([53], RedDragon.new())
 NpcCombatDef.add([54], BlackDragon.new())
+NpcCombatDef.add([50], KingBlackDragon.new())
 NpcCombatDef.add([1590], BronzeDragon.new())
 NpcCombatDef.add([1591], IronDragon.new())
 NpcCombatDef.add([1592], SteelDragon.new())
@@ -414,8 +448,8 @@ NpcCombatDef.add([3752, 3754, 3756, 3758, 3759], Torcher.new())
 NpcCombatDef.add([1158], KalphiteQueenFirstForm.new())
 NpcCombatDef.add([1160], KalphiteQueenSecondForm.new())
 NpcCombatDef.add([914], BattleMageGuthix.new())
-NpcCombatDef.add([912], BattleMageZamorak.new())
-NpcCombatDef.add([913], BattleMageSaradomin.new())
+NpcCombatDef.add([912, 6221], BattleMageZamorak.new())
+NpcCombatDef.add([913, 6257], BattleMageSaradomin.new())
 NpcCombatDef.add([907], KolodionFirstForm.new())
 NpcCombatDef.add([908], KolodionSecondForm.new())
 NpcCombatDef.add([910], KolodionFourthForm.new())
@@ -425,3 +459,5 @@ NpcCombatDef.add([1351, 1352, 1353, 1354, 1355, 1356], DagannothMother.new())
 NpcCombatDef.add([1341, 1342, 1343], WeakDagannothMelee.new())
 NpcCombatDef.add([1338, 1339, 1340], WeakDagannothRange.new())
 NpcCombatDef.add([3068, 3069, 3070, 3071], SkeletalWyvern.new())
+NpcCombatDef.add([1456, 1457, 1458], MonkeyArcher.new())
+NpcCombatDef.add([1472], JungleDemon.new())

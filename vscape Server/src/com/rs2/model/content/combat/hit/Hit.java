@@ -28,6 +28,7 @@ import com.rs2.model.content.combat.util.Degrading;
 import com.rs2.model.content.combat.util.EnchantedBolts;
 import com.rs2.model.content.combat.util.RingEffect;
 import com.rs2.model.content.combat.weapon.AttackStyle;
+import com.rs2.model.content.minigames.MinigameAreas;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
 import com.rs2.model.content.minigames.pestcontrol.PestControl;
 import com.rs2.model.content.quests.AnimalMagnetism;
@@ -35,6 +36,9 @@ import com.rs2.model.content.quests.DemonSlayer;
 import com.rs2.model.content.quests.FamilyCrest;
 import com.rs2.model.content.quests.GoblinDiplomacy;
 import com.rs2.model.content.quests.HorrorFromTheDeep;
+import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
+import com.rs2.model.content.quests.RecruitmentDrive;
 import com.rs2.model.content.quests.VampireSlayer;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.magic.Spell;
@@ -81,6 +85,12 @@ public class Hit {
 	public void initialize(boolean queue) {
 		if(victim != null && victim.isPlayer() && ((Player)victim).getStaffRights() >= 3) { //dev mode just in case
 		    damage = 0;
+		    return;
+		}
+		if(victim != null && victim.isPlayer() && ((Player)victim).getMMVars().inProcessOfBeingJailed && ((Player)victim).onApeAtoll() && ((Npc)attacker).getNpcId() != 1457) {
+		    return;
+		}
+		if(victim != null && victim.isPlayer() && MinigameAreas.isInArea(victim.getPosition(), ApeAtoll.JAIL) && (damage > 8 || (victim.getCurrentHp() - damage) <= 0)) {
 		    return;
 		}
 		if(victim.isNpc() && hitDef.getHitType() == HitType.POISON)
@@ -177,6 +187,15 @@ public class Hit {
 			}
 		    }
 		}
+		if(attacker != null && victim != null && attacker.isPlayer() && victim.isNpc() && victim.onApeAtoll()) {
+		    if(((Npc)victim).getNpcId() == 1459 || ((Npc)victim).getNpcId() == 1460) {
+			if(victim.getCurrentHp() < (victim.getMaxHp() / 6) && Misc.random(2) == 1) {
+			    victim.getUpdateFlags().sendAnimation(1405);
+			    hitDef.setVictimAnimation(6969);
+			    ((Npc)victim).setCurrentHp(((Npc)victim).getCurrentHp() + 25);
+			}
+		    }
+		}
 		if(attacker != null && victim != null && attacker.isPlayer() && ((Player)attacker).getArmorPiercedEntity() != null && ((Player)attacker).getArmorPiercedEntity().equals(victim)) {
 		    damage *= 1.1;
 		   // ((Player)attacker).getActionSender().sendMessage("Armor piercing...");
@@ -203,6 +222,12 @@ public class Hit {
 			} else if(hitDef.getHitGraphic().getId() == 128) {
 			    damage += 4;
 			}
+		    }
+		}
+		if(attacker != null && victim != null && attacker.isPlayer() && victim.isNpc() && ((Npc)victim).getNpcId() == RecruitmentDrive.SIR_LEYE) {
+		    if((victim.getCurrentHp() - damage) <= 0 && ((Player)attacker).getGender() != 1) {
+			victim.getUpdateFlags().sendForceMessage("Fool! No man can defeat me!");
+			damage = 0;
 		    }
 		}
 		if(attacker != null && victim != null && attacker.isPlayer() 
@@ -495,6 +520,29 @@ public class Hit {
                 }
             }
         }
+	if (attacker != null && victim != null && attacker.isNpc() && victim.isNpc()) {
+	    Npc attacker = (Npc) this.attacker;
+	    Npc victim = (Npc) this.victim;
+	    if (attacker.getNpcId() >= 1412 && attacker.getNpcId() <= 1426) {
+		hitDef.setVictimAnimation(6969);
+		if(victim.getNpcId() == 1472) {
+		    if (damage > 1) {
+			damage = 1;
+		    }
+		    if (Misc.random(4) == 1) {
+			damage = 0;
+		    }
+		}
+		if(victim.getNpcId() != 1472) {
+		    if(Misc.random(3) == 1) {
+			damage = 1;
+		    }
+		}
+		if (victim.getNpcId() == MonkeyMadness.JUNGLE_DEMON && victim.getCurrentHp() < (victim.getMaxHp() / 6) && !victim.getPlayerOwner().isAttacking()) {
+		    victim.setCurrentHp(victim.getMaxHp());
+		}
+	    }
+	}
         if (hitDef.doBlockAnim() && !victim.getUpdateFlags().isAnimationUpdateRequired()) {
         	if (hitDef.getVictimAnimation() > 0) {
         		 victim.getUpdateFlags().sendAnimation(hitDef.getVictimAnimation());
@@ -506,10 +554,12 @@ public class Hit {
     	            victim.getUpdateFlags().sendAnimation(victim.getBlockAnimation());
     			}
     		} else {
-                victim.getUpdateFlags().sendAnimation(victim.getBlockAnimation());
+			if(victim.getBlockAnimation() > 0) {
+			    victim.getUpdateFlags().sendAnimation(victim.getBlockAnimation());
+			}
     		}
         }
-        if (victim.isPlayer()) {
+        if (victim.isPlayer() && !((Player)victim).getMMVars().inProcessOfBeingJailed) {
             Player player = (Player) victim;
             player.getActionSender().removeInterfaces();
         }
@@ -534,63 +584,79 @@ public class Hit {
         }
         if (!isDelayedDamaged) {
             if (hitDef.getAttackStyle() != null) {
-            	if (hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE || hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE_FAR && victim.isPlayer()) {
-            		Player player = (Player) victim;
-					switch (player.antiFire()) {
-						case 2 :
-							damage = 0;
-							break;
-						case 1 :
-						    if(attacker != null && attacker.isNpc() && !((Npc)attacker).getDefinition().getName().toLowerCase().contains("wyvern")) {
-							player.getActionSender().sendMessage("You manage to resist some of the dragonfire.");
-							if(player.getEquipment().getId(Constants.SHIELD) == 11284) {
-							    player.getUpdateFlags().sendAnimation(6695); //6700 removing charges, 6696 special
-							    player.getUpdateFlags().sendGraphic(new Graphic(1164, 0));
-							    if(player.getDfsCharges() < 49) {
-								player.setDfsCharges(player.getDfsCharges() + 1);
-							    } else if (player.getDfsCharges() == 49) {
-								player.setDfsCharges(50);
-								player.getActionSender().sendMessage("Your Dragonfire shield is fully charged.");
-								player.getEquipment().replaceEquipment(11283, Constants.SHIELD);
-							    }
-							    player.getEquipment().sendBonus(player);
-							}
-							damage = Misc.random(hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE_FAR ? 8 : 4);
-							break;
-						    } else {
-							HitDef hitDefFreeze = new HitDef(null, HitType.NORMAL, 0);
-							Hit freeze = new Hit(player, player, hitDefFreeze);
-							BindingEffect bind = new BindingEffect(12);
-							bind.initialize(freeze);
-							player.getActionSender().sendMessage("You manage to resist most of the icy breath, but are frozen in place.");
-							damage = Misc.random(10);
-							break;
-						    }
-						default :
-						    if(attacker != null && attacker.isNpc() && !((Npc)attacker).getDefinition().getName().toLowerCase().contains("wyvern")) {
-							player.getActionSender().sendMessage("You are horribly burned by the dragonfire!");
-							damage = 30 + Misc.random(20);
-							break;
-						    } else {
-							if(player.getEquipment().getId(Constants.SHIELD) != 2890) {
-							    player.getActionSender().sendMessage("You are horribly burned by the ice breath!");
-							    damage = 30 + Misc.random(20);
-							    break;
-							} else {
-							    HitDef hitDefFreeze = new HitDef(null, HitType.NORMAL, 0);
-							    Hit freeze = new Hit(player, player, hitDefFreeze);
-							    BindingEffect bind = new BindingEffect(12);
-							    bind.initialize(freeze);
-							    player.getActionSender().sendMessage("You magically resist most of the icy breath, but are frozen in place.");
-							    damage = Misc.random(10);
-							    break;
-							}
-						    }
-					}
-					if (damage > 10 && hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE && victim.isProtectingFromCombat(hitDef.getAttackStyle().getAttackType(), attacker)) {
-            			player.getActionSender().sendMessage("Your prayers manage to resist some of the dragonfire.");
-            			damage = Misc.random(10);
-            		}
+            	if (hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE || hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE_FAR || (attacker.isNpc() && ((Npc)attacker).getNpcId() == 50 && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.MELEE_ACCURATE) && victim.isPlayer()) {
+		    Player player = (Player) victim;
+		    switch (player.antiFire()) {
+			case 2:
+			    if (attacker.isNpc() && ((Npc)attacker).getNpcId() == 50 && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.MELEE_ACCURATE && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.DRAGONFIRE && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.DRAGONFIRE_FAR) {
+				damage = Misc.random(10); //KBD's 3 special breaths
+			    } else {
+				damage = 0;
+			    }
+			    break;
+			case 1:
+			    if (attacker != null && attacker.isNpc() && !((Npc) attacker).getDefinition().getName().toLowerCase().contains("wyvern")) {
+				player.getActionSender().sendMessage("You manage to resist some of the dragonfire.");
+				if (player.getEquipment().getId(Constants.SHIELD) == 11284) {
+				    player.getUpdateFlags().sendAnimation(6695); //6700 removing charges, 6696 special
+				    player.getUpdateFlags().sendGraphic(new Graphic(1164, 0));
+				    if (player.getDfsCharges() < 49) {
+					player.setDfsCharges(player.getDfsCharges() + 1);
+				    } else if (player.getDfsCharges() == 49) {
+					player.setDfsCharges(50);
+					player.getActionSender().sendMessage("Your Dragonfire shield is fully charged.");
+					player.getEquipment().replaceEquipment(11283, Constants.SHIELD);
+				    }
+				    player.getEquipment().sendBonus(player);
+				}
+				if(((Npc) attacker).getNpcId() == 50) {
+				    if (attacker.isNpc() && ((Npc)attacker).getNpcId() == 50 && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.MELEE_ACCURATE && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.DRAGONFIRE && hitDef.getAttackStyle().getMode() != AttackStyle.Mode.DRAGONFIRE_FAR) {
+					damage = Misc.random(10); //KBD's 3 special breaths
+				    } else {
+					damage = Misc.random(15);
+				    }
+				} else {
+				    damage = Misc.random(hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE_FAR ? 8 : 4);
+				}
+				break;
+			    } else {
+				HitDef hitDefFreeze = new HitDef(null, HitType.NORMAL, 0);
+				Hit freeze = new Hit(player, player, hitDefFreeze);
+				BindingEffect bind = new BindingEffect(12);
+				bind.initialize(freeze);
+				player.getActionSender().sendMessage("You manage to resist most of the icy breath, but are frozen in place.");
+				damage = Misc.random(10);
+				break;
+			    }
+			default:
+			    if (attacker != null && attacker.isNpc() && !((Npc) attacker).getDefinition().getName().toLowerCase().contains("wyvern")) {
+				player.getActionSender().sendMessage("You are horribly burned by the dragonfire!");
+				damage = 30 + Misc.random(20);
+				break;
+			    } else if (attacker != null && attacker.isNpc() && ((Npc) attacker).getNpcId() == 50) {
+				player.getActionSender().sendMessage("You are horribly burned by the dragonfire!");
+				damage = 45 + Misc.random(20);
+				break;
+			    } else {
+				if (player.getEquipment().getId(Constants.SHIELD) != 2890) {
+				    player.getActionSender().sendMessage("You are horribly burned by the ice breath!");
+				    damage = 30 + Misc.random(20);
+				    break;
+				} else {
+				    HitDef hitDefFreeze = new HitDef(null, HitType.NORMAL, 0);
+				    Hit freeze = new Hit(player, player, hitDefFreeze);
+				    BindingEffect bind = new BindingEffect(12);
+				    bind.initialize(freeze);
+				    player.getActionSender().sendMessage("You magically resist most of the icy breath, but are frozen in place.");
+				    damage = Misc.random(10);
+				    break;
+				}
+			    }
+		    }
+		    if (damage > 10 && hitDef.getAttackStyle().getMode() == AttackStyle.Mode.DRAGONFIRE && victim.isProtectingFromCombat(hitDef.getAttackStyle().getAttackType(), attacker)) {
+			player.getActionSender().sendMessage("Your prayers manage to resist some of the dragonfire.");
+			damage = Misc.random(10);
+		    }
             	} else if (victim.isProtectingFromCombat(hitDef.getAttackStyle().getAttackType(), attacker) && hitDef.getSpecialEffect() != 11 ) {
                     if (attacker != null && attacker.isPlayer())
                         damage = (int) Math.ceil(damage * .6);
@@ -799,6 +865,10 @@ public class Hit {
             }
 	    if (getAttacker().isPlayer() && ((Player) attacker).getBonus(3) <= -20 && hitDef.getAttackStyle().getAttackType() == AttackType.MAGIC) {
 		hit = false;
+	    } else if(attacker != null && attacker.isNpc() && victim != null && victim.isNpc() && ((Npc)victim).getNpcId() == 1472) {
+		hit = true;
+	    } else if (attacker != null && attacker.isNpc() && victim != null && victim.isNpc() && attacker.onApeAtoll()) {
+		hit = true;
 	    } else {
 		hit = accurate;
 	    }

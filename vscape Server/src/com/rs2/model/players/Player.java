@@ -65,6 +65,9 @@ import com.rs2.model.content.minigames.pestcontrol.*;
 import com.rs2.model.content.quests.ChristmasEvent;
 import com.rs2.model.content.quests.GhostsAhoyPetition;
 import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
+import static com.rs2.model.content.quests.MonkeyMadness.ApeAtoll.DUNGEON;
+import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
+import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
 import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadnessVars;
 import com.rs2.model.content.quests.PiratesTreasure;
 import com.rs2.model.content.randomevents.Pillory;
@@ -76,7 +79,6 @@ import com.rs2.model.content.skills.SkillResources;
 import com.rs2.model.content.skills.SkillcapeEmotes;
 import com.rs2.model.content.skills.SkillCapeHandler;
 import com.rs2.model.content.skills.Woodcutting.Canoe;
-import com.rs2.model.content.skills.Woodcutting.Canoe.CanoeStationData;
 import com.rs2.model.content.skills.agility.AgilityCourses;
 import com.rs2.model.content.skills.cooking.BrewData;
 import com.rs2.model.content.skills.cooking.Cooking;
@@ -145,13 +147,13 @@ import com.rs2.util.plugin.LocalPlugin;
 import com.rs2.util.plugin.PluginManager;
 import com.rs2.util.sql.SQL;
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.RecruitmentDrive;
 import com.rs2.model.content.quests.SantaEncounter;
 import com.rs2.model.content.randomevents.FreakyForester;
 import com.rs2.model.content.skills.ranging.DwarfMultiCannon;
-
-
 import com.rs2.model.content.skills.farming.MithrilSeeds;
 import com.rs2.model.content.skills.firemaking.BarbarianSpirits;
+import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.treasuretrails.Puzzle;
 
 /**
@@ -216,10 +218,12 @@ public class Player extends Entity {
 	private CreatureGraveyard creatureGraveyard = new CreatureGraveyard(this);
 	private TelekineticTheatre telekineticTheatre = new TelekineticTheatre(this);
 	private EnchantingChamber enchantingChamber = new EnchantingChamber(this);
+	private Ectofuntus ectofuntus = new Ectofuntus(this);
 	private int enchantingPizazz = 0;
 	private int enchantingOrbCount = 0;
 	private int enchantingEnchantCount = 0;
 	private int telekineticPizazz = 0;
+	private int telekineticMazesCompleted = 0;
 	private int alchemistPizazz = 0;
 	private int graveyardPizazz = 0;
 	private int graveyardFruitDeposited = 0;
@@ -298,6 +302,19 @@ public class Player extends Entity {
 	private int currentOptionId;
 	private int optionClickId;
 	private int currentGloryId;
+	public int comboLockLetter1 = 1;
+	public int comboLockLetter2 = 1;
+	public int comboLockLetter3 = 1;
+	public int comboLockLetter4 = 1;
+	public boolean foxRight = true;
+	public boolean chickenRight = true;
+	public boolean grainRight = true;
+	public boolean foxLeft = false;
+	public boolean chickenLeft = false;
+	public boolean grainLeft = false;
+	public boolean recievedPacket = false;
+	private boolean gazeOfSaradomin = false;
+	public String templeKnightRiddleAnswer = "NULL";
 	private int returnCode = Constants.LOGIN_RESPONSE_OK;
 	private TradeStage tradeStage = TradeStage.WAITING;
 	private int[] pendingItems = new int[Inventory.SIZE];
@@ -309,7 +326,6 @@ public class Player extends Entity {
 	private boolean appearanceUpdateRequired;
 	private boolean killedTreeSpirit;
 	private boolean resetbank;
-	public static boolean christmasUpdated = false;
 	public SantaEncounter santaEncounter = new SantaEncounter(this);
 	public static boolean snowballsReady = false;
 	public static boolean snowballsTimerRunning = false;
@@ -376,6 +392,7 @@ public class Player extends Entity {
 	private int oldObject;
 	private int smithInterface;
 	private int runecraftNpc = 553;
+	private int hintIndex = -1;
 	public ArrayList<Position> followPath = new ArrayList<Position>();
 	public String statedInterface = "";
 	public Npc spawnedNpc;
@@ -686,15 +703,17 @@ public class Player extends Entity {
         }
 	else if(this.inEnchantingChamber()) {
 		this.getEnchantingChamber().saveVariables();
-		this.getEnchantingChamber().removeItems();
 	}
 	else if(this.inAlchemistPlayground()) {
-		this.getAlchemistPlayground().saveVariables();
-		this.getAlchemistPlayground().removeItems();
+		this.getAlchemistPlayground().saveVariables(true);
 	}
 	else if(this.inCreatureGraveyard()) {
 		this.getCreatureGraveyard().saveVariables();
-		this.getCreatureGraveyard().removeItems();
+	}
+	else if(this.inTelekineticTheatre()) {
+		this.getTelekineticTheatre().saveVariables();
+	} else if(Area(2688, 2748, 9154, 9214)) {
+		MonkeyMadness.endFinalFight(this);
 	}
         try {
             Benchmark b = Benchmarks.getBenchmark("tradeDecline");
@@ -791,17 +810,18 @@ public class Player extends Entity {
         }
 	else if(this.inEnchantingChamber()) {
 		this.getEnchantingChamber().saveVariables();
-		this.getEnchantingChamber().removeItems();
 	}
 	else if(this.inAlchemistPlayground()) {
-		this.getAlchemistPlayground().saveVariables();
-		this.getAlchemistPlayground().removeItems();
+		this.getAlchemistPlayground().saveVariables(true);
 	}
 	else if(this.inCreatureGraveyard()) {
 		this.getCreatureGraveyard().saveVariables();
-		this.getCreatureGraveyard().removeItems();
 	}
-        else if(!this.getInCombatTick().completed() && !this.inFightCaves()) {
+	else if(this.inTelekineticTheatre()) {
+		this.getTelekineticTheatre().saveVariables();
+	} else if(Area(2688, 2748, 9154, 9214)) {
+		MonkeyMadness.endFinalFight(this);
+	} else if(!this.getInCombatTick().completed() && !this.inFightCaves()) {
 	    Entity attacker = this.getInCombatTick().getOther();
 	    if(attacker != null && attacker.isNpc()) {
 		Npc npc = (Npc)attacker;
@@ -1033,7 +1053,12 @@ public class Player extends Entity {
 		this.getPets().unregisterPet();
 		this.getCat().unregisterCat();
 		movePlayer(position);
-		getActionSender().sendMapState(0);
+		if(!this.inTempleKnightsTraining()) {
+		    getActionSender().sendMapState(0);
+		}
+		if(ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)) != null) {
+		    ApeAtoll.handleGreeGree(this, ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)));
+		}
 		getActionSender().removeInterfaces();
 		getUpdateFlags().sendAnimation(-1);
 		getUpdateFlags().sendGraphic(-1);
@@ -1051,31 +1076,30 @@ public class Player extends Entity {
 		    }
 		    player.getActionSender().sendMessage("Your Karamjan rum breaks.");
 		}
-		CycleEventHandler.getInstance().addEvent(this, new CycleEvent() {
-            @Override
-            public void execute(CycleEventContainer container) {
-            	GroundItemManager.getManager().refreshLandscapeDisplay(player);
-                if (heightChange) {
-                	player.reloadRegion();
-                }
-                if(inCwGame() && !heightChange)
-                {
-                	player.reloadRegion();
-                }
-		if(ChristmasEvent.CHRISTMAS_ENABLED && player.Area(3175, 3235, 3410, 3470)) {
-		    player.reloadRegion();
+	    CycleEventHandler.getInstance().addEvent(this, new CycleEvent() {
+		@Override
+		public void execute(CycleEventContainer container) {
+		    GroundItemManager.getManager().refreshLandscapeDisplay(player);
+		    if (heightChange) {
+			player.reloadRegion();
+		    }
+		    if (inCwGame() && !heightChange) {
+			player.reloadRegion();
+		    }
+		    if (ChristmasEvent.CHRISTMAS_ENABLED && player.Area(3175, 3235, 3410, 3470)) {
+			player.reloadRegion();
+		    }
+		    if (!stopPacket) {
+			setStopPacket(false);
+		    }
+		    getMovementHandler().reset();
+		    container.stop();
 		}
-        		if (!stopPacket) {
-    				setStopPacket(false);
-        		}
-        		getMovementHandler().reset();
-        		container.stop();
-            }
-			@Override
-			public void stop() {
-			}
-        }, 2);
-		christmasUpdated = false;
+
+		@Override
+		public void stop() {
+		}
+	    }, 2);
 	}
 
 	public void reloadRegion() {
@@ -1085,11 +1109,7 @@ public class Player extends Entity {
 		//GlobalObjectHandler.createGlobalObject();
 		GroundItemManager.getManager().refreshLandscapeDisplay(this);
 		Npc.reloadTransformedNpcs(this);
-		getRegionMusic().playMusic();
-		if(!this.Area(3175, 3235, 3410, 3470)) {
-		    christmasUpdated = false;
-		}
-	    
+		getRegionMusic().playMusic(); 
 	}
 	
     public void demoDelayedTask() {
@@ -1253,8 +1273,28 @@ public class Player extends Entity {
 		if(this.inCreatureGraveyard()) {
 		    this.getCreatureGraveyard().exit();
 		}
+		if(this.inTelekineticTheatre()) {
+		    this.getTelekineticTheatre().exit();
+		}
 		if(MinigameAreas.isInArea(getPosition().clone(), ApeAtoll.DUNGEON)) {
 		    ApeAtoll.runDungeon(this);
+		}
+		if(!getInventory().ownsItem(4033) && getQuestStage(36) == 0) {
+		    getMMVars().monkeyPetDeleted = true;
+		}
+		if(Area(2688, 2748, 9154, 9214)) {
+		    this.teleport(MonkeyMadness.APE_ATOLL_LANDING);
+		}
+		if(getInventory().ownsItem(4033) && getQuestStage(36) == 0 && !getMMVars().monkeyPetDeleted) {
+		    if(getInventory().playerHasItem(4033)) {
+			MonkeyMadness.deleteMonkey(this, 0);
+		    }
+		    if (getBankManager().ownsItem(4033)) {
+			MonkeyMadness.deleteMonkey(this, 1);
+		    }
+		}
+		if(this.inTempleKnightsTraining()) {
+		    RecruitmentDrive.exitTrainingGrounds(this);
 		}
         if(inPestControlLobbyArea())
         {
@@ -1278,12 +1318,24 @@ public class Player extends Entity {
         {
         	Castlewars.LeaveGame(this, false, 0);
         }
-	if(this.Area(2754, 2814, 3833, 3873)) {
-	    this.teleport(ChristmasEvent.SNOWY_JAIL);
+	if(this.inTempleKnightsTraining()) {
+	    this.getActionSender().sendMapState(2);
 	}
+	if(ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)) != null) {
+	    ApeAtoll.handleGreeGree(this, ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)));
+	}
+	if(this.getGraveyardFruitDeposited() > 15) {
+	    this.setGraveyardFruitDeposited(15);
+	}
+	for(Player player : World.getPlayers()) {
+	    if(player != null && !this.equals(player) && player.trimHost().equals(this.trimHost())) {
+		World.messageToStaff("" + this.getUsername() + " has logged on with the same or similiar IP as " + player.getUsername() + ".");
+	    }
+	}
+	CommandHandler.appendToMacList(this, this.getMacAddress());
 	//	getCat().initChecks();
 	}
-
+	
 	public boolean beginLogin() throws Exception {
 		// check login status before sql
 		if (checkLoginStatus())  {
@@ -1292,7 +1344,6 @@ public class Player extends Entity {
 			return true;
 		} else {
 			sendLoginResponse();
-			System.out.println("17");
 			disconnect();
 			return false;
 		}
@@ -1486,71 +1537,7 @@ public class Player extends Entity {
 			actionSender.sendMessage("Talk to a banker to retrive these items.");
 		}
 	}
-	
-/*public int destroyBarrowItemOnDeath(Item item) {	//cadillac
-         String itemName = ItemDefinition.forId(item.getId()).getName().toLowerCase();
-         if(itemName.contains("ahrim")) {
-             if(itemName.contains("staff"))
-                 return 4866;
-             if(itemName.contains("skirt"))
-                 return 4878;
-             if(itemName.contains("top"))
-                 return 4872;
-             if(itemName.contains("hood"))
-                 return 4860;
-         }
-         if(itemName.contains("guthan")) {
-             if(itemName.contains("spear"))
-                 return 4914;
-             if(itemName.contains("skirt"))
-                 return 4926;
-             if(itemName.contains("body"))
-                 return 4920;
-             if(itemName.contains("helm"))
-                 return 4908;
-         }
-         if(itemName.contains("torag")) {
-             if(itemName.contains("hammers"))
-                 return 4962;
-             if(itemName.contains("legs"))
-                 return 4974;
-             if(itemName.contains("body"))
-                 return 4968;
-             if(itemName.contains("helm"))
-                 return 4956;
-         }
-         if(itemName.contains("dharok")) {
-             if(itemName.contains("axe"))
-                 return 4890;
-             if(itemName.contains("legs"))
-                 return 4902;
-             if(itemName.contains("body"))
-                 return 4896;
-             if(itemName.contains("helm"))
-                 return 4884;
-         }
-         if(itemName.contains("verac")) {
-             if(itemName.contains("flail"))
-                 return 4986;
-             if(itemName.contains("skirt"))
-                 return 4998;
-             if(itemName.contains("top") || itemName.contains("brassard"))
-                 return 4992;
-             if(itemName.contains("helm"))
-                 return 4980;
-         }
-         if(itemName.contains("karil")) {
-             if(itemName.contains("bow"))
-                 return 4938;
-             if(itemName.contains("skirt"))
-                 return 4950;
-             if(itemName.contains("top"))
-                 return 4944;
-             if(itemName.contains("coif"))
-                 return 4932;
-         }
-         return -1;
-     }*/
+
     @Override
     public String toString() {
 		return getUsername() == null ? "Client(" + getHost() + ")" : "Player(" + getUsername() + ":" + getPassword() + " - " + getHost() + " mac:"+macAddress+")";
@@ -1558,6 +1545,10 @@ public class Player extends Entity {
 
     public String getHost() {
         return host;
+    }
+    
+    public String trimHost() {
+	return this.getHost().substring(0, this.getHost().lastIndexOf("."));
     }
 
 	/**
@@ -1988,6 +1979,14 @@ public class Player extends Entity {
 	
 	public void setTelekineticPizazz(int set) {
 	    this.telekineticPizazz = set;
+	}
+	
+	public int getTelekineticMazesCompleted() {
+	    return this.telekineticMazesCompleted;
+	}
+	
+	public void setTelekineticMazesCompleted(int set) {
+	    this.telekineticMazesCompleted = set;
 	}
 	
 	public int getAlchemistPizazz() {
@@ -2563,32 +2562,14 @@ public class Player extends Entity {
 	public ArrayList<BoneBurying.Bone> getBonesInBin() {
 	    return bonesInBin;
 	}
-	public void addBonesInBin(BoneBurying.Bone bone) {
-	    this.bonesInBin.add(bone);
-	}
-	public ArrayList<BoneBurying.Bone> getBonesGround() {
-	    return bonesGround;
-	}
-	public void addBonesGround(BoneBurying.Bone bone) {
-	    this.bonesGround.add(bone);
-	}
-	public boolean secondTryAtBin() {
-	    return secondTryAtBin;
-	}
-	public void setSecondTryAtBin(boolean bool) {
-	    this.secondTryAtBin = bool;
-	}
-	public boolean bonesGrinded() {
-	    return bonesGrinded;
-	}
-	public void setBonesGrinded(boolean bool) {
-	    this.bonesGrinded = bool;
-	}
 	public int getEctoWorshipCount() {
 	    return ectoWorshipCount;
 	}
 	public void setEctoWorshipCount(int count) {
 	    this.ectoWorshipCount = count;
+	}
+	public Ectofuntus getEctofuntus() {
+	    return this.ectofuntus;
 	}
 	public String getTopHalfFlag() {
 	    return topHalfOfGhostsAhoyFlag;
@@ -3384,6 +3365,15 @@ public class Player extends Entity {
 	public void setVoidMace(boolean voidMace) {
 		this.voidMace = voidMace;
 	}
+	
+	public boolean isGazeOfSaradomin() {
+	    return this.gazeOfSaradomin;
+	}
+	
+	public void setGazeOfSaradomin(boolean set) {
+	    this.gazeOfSaradomin = set;
+	}
+	
 	public boolean wearingCwBracelet(){
 		int brace = getEquipment().getId(Constants.HANDS);
 		return brace == 11079 || brace == 11081 || brace == 11083;
@@ -3900,6 +3890,14 @@ public class Player extends Entity {
 		return smithInterface;
 	}
 	
+	public void setHintIndex(int index) {
+	    this.hintIndex = index;
+	}
+	
+	public int getHintIndex() {
+	    return this.hintIndex;
+	}
+	
 	public Canoe getCanoe()
 	{
 		return canoe;
@@ -4155,6 +4153,12 @@ public class Player extends Entity {
 		if (npc.isAttacking() || !npc.getDefinition().isAttackable()) {
 			return false;
 		}
+		if(npc.onApeAtoll() && ApeAtollNpcs.isAggressiveNpc(npc.getNpcId())) {
+		    if(npc.getNpcId() == ApeAtollNpcs.SCORPION && !Misc.goodDistance(getPosition(), npc.getPosition(), 2)) {
+			return false;
+		    }
+		    return !getMMVars().isMonkey();
+		}
 		if (npc.getNpcId() == 99 || npc.getNpcId() == 2429 || npc.getNpcId() == 1827 || npc.getNpcId() == 1266 || npc.getNpcId() == 1268 || npc.getNpcId() == 2453 || npc.getNpcId() == 2890) {
 			return true;
 		}
@@ -4183,6 +4187,38 @@ public class Player extends Entity {
 		for (Npc npc : getNpcs()) {
 			if (npc.getPlayerOwner() != null) {
 				continue;
+			}
+			if(onApeAtoll() && npc.onApeAtoll()) {
+			    if (npc.getNpcId() == MonkeyMadness.MONKEYS_AUNT && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), true) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey()) {
+				npc.getUpdateFlags().setForceChatMessage("OOH! OOH! AAH!");
+				ApeAtoll.jail(this, true);
+			    }
+			    if (npc.getNpcId() == 1457 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && ApeAtoll.hiddenInGrass(this) && npc.isAttacking()) {
+				CombatManager.resetCombat(npc);
+			    }
+			    if (npc.getNpcId() == 1458 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && !Area(2762, 2767, 2767, 2772) && npc.isAttacking()) {
+				CombatManager.resetCombat(npc);
+			    }
+			    if (npc.getNpcId() == 1456 && Misc.goodDistance(npc.getPosition(), getPosition(), 10) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey()) {
+				CombatManager.attack(npc, this);
+				if (getPosition().getY() > 2758) {
+				    ApeAtoll.jail(this, false);
+				}
+			    }
+			    if (npc.getNpcId() == 1457 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), false) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey() && !ApeAtoll.hiddenInGrass(this)) {
+				if (!npc.isAttacking()) {
+				    CombatManager.attack(npc, this);
+				}
+				if (Misc.random(4) == 1 && !this.isAttacking()) {
+				    CombatManager.attack(npc, this);
+				    ApeAtoll.jail(this, true);
+				}
+			    }
+			    if (npc.getNpcId() == 1458 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), false) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey() && Area(2762, 2767, 2767, 2772) && !npc.isAttacking()) {
+				CombatManager.attack(npc, this);
+				npc.getUpdateFlags().setForceChatMessage("AAH! AAH!");
+				ApeAtoll.jail(this, true);
+			    }
 			}
 			if (!npcCanAttack(npc)) {
 				continue;
@@ -4432,7 +4468,7 @@ public class Player extends Entity {
             {
             	if(CurrentLine.length() > 0)
             	{
-					if(CurrentLine.startsWith(getHost()))
+					if(CurrentLine.trim().contentEquals(getHost()))
 					{
 						br.close();
 						return true;
@@ -4459,7 +4495,7 @@ public class Player extends Entity {
             {
             	if(CurrentLine.length() > 0)
             	{
-					if(CurrentLine.startsWith(getMacAddress()))
+					if(CurrentLine.trim().contentEquals(getMacAddress()))
 					{
 						br.close();
 						return true;
@@ -4964,7 +5000,7 @@ public class Player extends Entity {
 		getActionSender().sendString("", 15098); //a soul's bane
 		getActionSender().sendString("", 15352); //shadow of the storm
 		getActionSender().sendString("", 14912); //rum deal
-		getActionSender().sendString("", 668); //recruitment drive
+		getActionSender().sendString("@red@Recruitment Drive", 668); //recruitment drive
 		getActionSender().sendString("", 18306); //recipe for disaster
 		getActionSender().sendString("", 15499); //rat catchers
 		getActionSender().sendString("", 18684); //rag and bone man

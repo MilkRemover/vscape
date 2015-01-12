@@ -94,6 +94,14 @@ public class CombatCycleEvent extends CycleEvent {
 				}
 				return;
 			}
+			if(attacker != null && victim != null && attacker.onApeAtoll() && victim.onApeAtoll()) {
+			    if (attacker.isNpc() && victim.isPlayer() && ((Player) victim).getMMVars().isMonkey()) {
+				CombatManager.resetCombat(attacker);
+			    } else if (attacker.isPlayer() && victim.isNpc() && ((Player) attacker).getMMVars().isMonkey()) {
+				((Player) attacker).getActionSender().sendMessage("You cannot attack as a monkey!");
+				CombatManager.resetCombat(attacker);
+			    }
+			}
 			/* ORDER IS SUPER IMPORTANT HERE, DON'T ADD ANYTHING AFTER */
 			int distance = Misc.getDistance(attacker.getPosition(), victim.getPosition());
 			List<AttackUsableResponse> attacksInDistance = new LinkedList<AttackUsableResponse>();
@@ -221,12 +229,16 @@ public class CombatCycleEvent extends CycleEvent {
 	}
 
 	public static void startCombat(Entity attacker, Entity victim) {
-		CombatCycleEvent combatEvent = new CombatCycleEvent(attacker, victim);
-		attacker.setCombatingEntity(victim);
-        attacker.getUpdateFlags().faceEntity(victim.getFaceIndex());
-    	attacker.getUpdateFlags().sendFaceToDirection(victim.getPosition());
-    	attacker.setFollowingEntity(victim);
-		attacker.setSkilling(combatEvent);
+	    if ((attacker.isNpc() && ((Npc) attacker).getNpcId() == 1472 && victim.isNpc()) || (attacker.isNpc() && ((Npc)attacker).getNpcId() >= 1442 && ((Npc)attacker).getNpcId() <= 1446)) {
+		return;
+	    }
+	    CombatCycleEvent combatEvent = new CombatCycleEvent(attacker, victim);
+	    attacker.setCombatingEntity(victim);
+	    attacker.getUpdateFlags().faceEntity(victim.getFaceIndex());
+	    attacker.getUpdateFlags().sendFaceToDirection(victim.getPosition());
+	    attacker.setFollowingEntity(victim);
+	    attacker.setSkilling(combatEvent);
+		
 		if (attacker.isNpc()) {
 			Npc npc = (Npc) attacker;
 			if (npc.getTransformTimer() < 1 && npc.isTransformOnAggression() > 0) {

@@ -12,8 +12,12 @@ import com.rs2.model.content.combat.projectile.Projectile;
 import com.rs2.model.content.combat.projectile.ProjectileDef;
 import com.rs2.model.content.minigames.magetrainingarena.AlchemistPlayground;
 import com.rs2.model.content.minigames.magetrainingarena.EnchantingChamber;
+import com.rs2.model.content.minigames.magetrainingarena.MageGameConstants;
+import com.rs2.model.content.minigames.magetrainingarena.TelekineticTheatre;
 import com.rs2.model.content.quests.FamilyCrest;
+import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.content.skills.Skill;
+import com.rs2.model.content.skills.runecrafting.TabHandler;
 import com.rs2.model.ground.GroundItem;
 import com.rs2.model.ground.GroundItemManager;
 import com.rs2.model.players.Player;
@@ -74,12 +78,21 @@ public abstract class MagicSkill extends CycleEvent {
 		this.taskId = player.getTask();
 		int i = 0;
 		for (Item rune : spell.getRunesRequired()) {
+		    if(!player.getInventory().playerHasItem(new Item(rune.getId(), rune.getCount())) && swapForComboRunes(player, rune.getId()) != 0) {
+			requirements[i++] = new RuneRequirement(swapForComboRunes(player, rune.getId()) , rune.getCount()) {
+				@Override
+				public String getFailMessage() {
+					return SpellAttack.FAILED_REQUIRED_RUNES;
+				}
+			};
+		    } else {
 			requirements[i++] = new RuneRequirement(rune.getId(), rune.getCount()) {
 				@Override
 				public String getFailMessage() {
 					return SpellAttack.FAILED_REQUIRED_RUNES;
 				}
 			};
+		    }
 		}
 		requirements[i] = new SkillLevelRequirement(Skill.MAGIC, spell.getLevelRequired()) {
 			@Override
@@ -285,7 +298,50 @@ public abstract class MagicSkill extends CycleEvent {
 		magicSkill.initialize();
 
 	}
-
+	
+	private static int swapForComboRunes(Player player, int runeId) {
+	    switch(runeId) {
+		default:
+		    return 0;
+		case 556: //Air rune
+		    if(player.getInventory().playerHasItem(4696)) {
+			return 4696; //Dust
+		    } else if(player.getInventory().playerHasItem(4695)) {
+			return 4695; //Mist
+		    } else if(player.getInventory().playerHasItem(4697)) {
+			return 4697; //Smoke
+		    }
+		return 0;
+		case 555: //Water rune
+		    if(player.getInventory().playerHasItem(4695)) {
+			return 4695; //Mist
+		    } else if(player.getInventory().playerHasItem(4698)) {
+			return 4698; //Mud
+		    } else if (player.getInventory().playerHasItem(4694)) {
+			return 4694; //Steam
+		    }
+		return 0;
+		case 557: //Earth rune
+		    if(player.getInventory().playerHasItem(4696)) {
+			return 4696; //Dust
+		    } else if(player.getInventory().playerHasItem(4698)) {
+			return 4698; //Mud
+		    } else if(player.getInventory().playerHasItem(4699)) {
+			return 4699; //Lava
+		    }
+		return 0;
+		case 554: //Fire rune
+		    if(player.getInventory().playerHasItem(4697)) {
+			return 4697; //Smoke
+		    } else if (player.getInventory().playerHasItem(4694)) {
+			return 4694; //Steam
+		    } else if(player.getInventory().playerHasItem(4699)) {
+			return 4699; //Lava
+		    }
+		return 0;
+	    }
+	}
+	
 	public static void spellButtonClicked(final Player player, final Spell spell) {
 		MagicSkill magicSkill = new MagicSkill(player, spell) {
 			@SuppressWarnings("incomplete-switch")
@@ -328,7 +384,12 @@ public abstract class MagicSkill extends CycleEvent {
 					case TROLLHEIM :
 						return player.getTeleportation().attemptTeleport(new Position(Constants.TROLLHEIM_X + Misc.random(1), Constants.TROLLHEIM_Y + Misc.random(1), 0));
 					case APE_ATOLL :
-						return player.getTeleportation().attemptTeleport(new Position(Constants.APE_ATOLL_X + Misc.random(1), Constants.APE_ATOLL_Y + Misc.random(1), 0));
+					    if(QuestHandler.questCompleted(player, 36) && player.getMMVars().trainingComplete()) {
+						return player.getTeleportation().attemptTeleport(new Position(Constants.APE_ATOLL_X, Constants.APE_ATOLL_Y, 1));
+					    } else {
+						player.getActionSender().sendMessage("You must complete the Training Program after Monkey Madness to use this spell.");
+						return false;
+					    }
 					case PADDEWWA :
 						return player.getTeleportation().attemptTeleport(new Position(Constants.PADDEWWA_X + Misc.random(1), Constants.PADDEWWA_Y + Misc.random(1), 0));
 					case SENNTISTEN :
@@ -375,7 +436,7 @@ public abstract class MagicSkill extends CycleEvent {
 						    player.getActionSender().sendMessage("You cannot telegrab this item.");
 						    return;
 						}
-						if (!Misc.checkClip(player.getPosition(), itemPos, false) || !Misc.goodDistance(player.getPosition(), itemPos, 10)) {
+						if ((!Misc.checkClip(player.getPosition(), itemPos, false) || !Misc.goodDistance(player.getPosition(), itemPos, 10)) && !player.inTelekineticTheatre()) {
 							return;
 						}
 						if (player.getPosition().equals(itemPos)) {
@@ -399,7 +460,7 @@ public abstract class MagicSkill extends CycleEvent {
 			@SuppressWarnings("incomplete-switch")
 			@Override
 			public boolean onExecute() {
-				if (groundItem == null)
+				if (groundItem == null && !player.inTelekineticTheatre())
 					return false;
 				switch (spell) {
 					case TELEGRAB :
@@ -417,6 +478,10 @@ public abstract class MagicSkill extends CycleEvent {
 			public void onHit(HitDef hitDef) {
 				switch (spell) {
 					case TELEGRAB :
+						if(itemId == TelekineticTheatre.STATUE) {
+						    player.getTelekineticTheatre().handleTelegrab(itemPos);
+						    return;
+						}
 						if (!GroundItemManager.getManager().itemExists(player, groundItem)) {
 							hitDef.setHitGraphic(null);
 							return;
@@ -539,6 +604,7 @@ public abstract class MagicSkill extends CycleEvent {
 			return false;
 		}
 		if(player.inEnchantingChamber() && EnchantingChamber.isEnchantingChamberItem(item)) {
+		    player.getEnchantingChamber().enchantItem(spellId, item);
 		    return true;
 		}
 		int index = -1;
@@ -654,6 +720,20 @@ public abstract class MagicSkill extends CycleEvent {
 		if (player.getInventory().getItemContainer().get(slot).getCount() > 1 && !player.getInventory().getItemContainer().hasRoomFor(new Item(995))) {
 			player.getActionSender().sendMessage("Not enough space in your inventory.");
 			return false;
+		}
+		if(player.inAlchemistPlayground()) {
+		    player.getAlchemistPlayground().alchItem(itemId);
+		    if (itemId == MageGameConstants.FREE_ALCH_ITEM) {
+			player.getActionSender().sendMessage("You alchemize this item at no rune cost!");
+			if (!TabHandler.fireStaff(player.getEquipment().getId(Constants.WEAPON))) {
+			    if (price == ItemManager.getInstance().getItemValue(itemId, "lowalch")) {
+				player.getInventory().addItem(Spell.LOW_ALCH.getRunesRequired()[0]); //Fire runes
+			    } else {
+				player.getInventory().addItem(Spell.HIGH_ALCH.getRunesRequired()[0]);
+			    }
+			}
+			player.getInventory().addItem(new Item(561, 1)); //Nature rune
+		    }
 		}
 		player.getActionSender().stopPlayerPacket(2);
 		player.getActionSender().sendFrame106(6);

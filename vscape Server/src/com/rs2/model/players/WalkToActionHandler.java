@@ -19,6 +19,7 @@ import com.rs2.model.content.minigames.duelarena.GlobalDuelRecorder;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
 import com.rs2.model.content.minigames.magetrainingarena.MageRewardHandling;
 import com.rs2.model.content.minigames.pestcontrol.*;
+import com.rs2.model.content.quests.GhostsAhoy;
 import com.rs2.model.content.quests.HeroesQuest;
 import com.rs2.model.content.quests.HorrorFromTheDeep;
 import com.rs2.model.content.quests.MerlinsCrystal;
@@ -54,7 +55,6 @@ import com.rs2.model.content.skills.thieving.ThieveOther;
 import com.rs2.model.content.skills.thieving.ThieveStalls;
 import com.rs2.model.content.skills.Woodcutting.ChopTree;
 import com.rs2.model.content.skills.Woodcutting.ChopTree.Tree;
-import com.rs2.model.content.skills.Woodcutting.Canoe;
 import com.rs2.model.content.treasuretrails.AnagramsScrolls;
 import com.rs2.model.content.treasuretrails.MapScrolls;
 import com.rs2.model.content.treasuretrails.SearchScrolls;
@@ -89,11 +89,11 @@ import com.rs2.model.content.randomevents.FreakyForester;
 import com.rs2.model.content.randomevents.SpawnEvent;
 import com.rs2.model.content.skills.agility.Agility;
 import com.rs2.model.content.skills.firemaking.BarbarianSpirits;
-import com.rs2.model.content.skills.prayer.Ectofungus;
 import com.rs2.model.content.skills.smithing.DragonfireShieldSmithing;
 import com.rs2.model.npcs.NpcLoader;
 import com.rs2.model.transport.Sailing;
 import com.rs2.model.transport.Travel;
+import com.rs2.util.clip.ClippedPathFinder;
 
 import java.util.Random;
 
@@ -156,10 +156,14 @@ public class WalkToActionHandler {
 				}
 				GameObjectDef def = SkillHandler.getObject(id, x, y, z);
 				if (def == null) { // Server.npcHandler.getNpcByLoc(Location.create(x,
-					if (id == 2142 || id == 2297 || id == 4879 || id == 4880 || id == 4881 || id == 5015 || id == 2311 || id == 2294 || id == 2295 || id == 2296 || id == 2022 || id == 9293  || id == 9328 || id == 2834 || id == 9330 || id == 9322 || id == 9324 || id == 2332 || id == 3933 || (id == 3203 || id == 4616 || id == 4615) || (id == 2213 && x == 3513) || (id == 356 && y == 3507) || GameObjectData.forId(id).getName().toLowerCase().contains("gangplank") || (id >= 14227 && id <= 14231)) { //exceptions
+					if (id == 2142 || id == 2297 || id == 4879 || (id >= 7272 && id <= 7287)  || id == 4766 || id == 4880 || id == 4881 || id == 5015 || id == 2311 || id == 2294 || id == 2295 || id == 2296 || id == 2022 || id == 9293  || id == 9328 || id == 2834 || id == 9330 || id == 9322 || id == 9324 || id == 2332 || id == 3933 || (id == 3203 || id == 4616 || id == 4615) || (id == 2213 && x == 3513) || (id == 356 && y == 3507) || GameObjectData.forId(id).getName().toLowerCase().contains("gangplank") || (id >= 14227 && id <= 14231)) { //exceptions
 						def = new GameObjectDef(id, 10, 0, new Position(x, y, z));
 					} else if (id == 4381 || id == 4382 || id == 4385 || id == 4386) { //exceptions
 						def = new GameObjectDef(id, 11, 0, new Position(x, y, z));
+					} else if (id == 4765) {
+						def = new GameObjectDef(id, 0, 0, new Position(x, y, z));
+					} else if (id == 4766) {
+						def = new GameObjectDef(id, 9, 0, new Position(x, y, z));
 					} else {
 						return;
 					}
@@ -205,10 +209,6 @@ public class WalkToActionHandler {
 				if(ApeAtoll.doObjectFirstClick(player, id, x, y)) {
 					this.stop();
 					return;
-				}
-				if(Ectofungus.doObjectFirstClick(player, player.getClickId(), player.getClickX(), player.getClickY())) {
-				    this.stop();
-				    return;
 				}
 				if (ObeliskTick.clickObelisk(id)) {
 					this.stop();
@@ -300,6 +300,10 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (player.getCreatureGraveyard().handleObjectClicking(id, x, y, z)) {
+					this.stop();
+					return;
+				}
+				if (player.getTelekineticTheatre().handleObjectClicking(id, x, y, z)) {
 					this.stop();
 					return;
 				}
@@ -638,6 +642,21 @@ public class WalkToActionHandler {
 					break;
 				    }
 				break;
+				case 10771: //Mage training arena stairs up east
+				    player.teleport(new Position(3369, 3307, 1));
+				    break;
+				case 10775: //Mage training arena stairs up west
+				    player.teleport(new Position(3357, 3307, 1));
+				    break;
+				case 10773: //Mage training arena stairs down east
+				    player.teleport(new Position(3366, 3306, 0));
+				    break;
+				case 10776: //Mage training arena stairs down west
+				    player.teleport(new Position(3360, 3306, 0));
+				    break;
+				case 10721: //Mage training arena entrance
+				    player.getActionSender().walkTo(0, player.getPosition().getY() > 3298 ? -2 : 2, true);
+				    break;
 				case 2143:
 				case 2144:
 				    if(player.getQuestStage(10) == 2) {
@@ -851,7 +870,7 @@ public class WalkToActionHandler {
 					}
 					break;
 				case 1968 :
-				case 1967 :
+				case 1967 : //grand tree doors
 				    player.setStopPacket(true);
 				    CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
 					@Override
@@ -1205,6 +1224,9 @@ public class WalkToActionHandler {
 					break;
 				case 1568: // open trapdoor
 					TrapDoor.handleTrapdoor(player, id, 1570, def);
+					break;
+				case GhostsAhoy.TRAPDOOR:
+					TrapDoor.handleTrapdoor(player, id, 5268, def);
 					break;
 				case 1570: // climb down trapdoor
 				case 5947: // climb into lumby swamp
@@ -1753,7 +1775,7 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				if(Ectofungus.doObjectSecondClick(player, id, x, y)) {
+				if(GhostsAhoy.doObjectSecondClick(player, id, x, y)) {
 					this.stop();
 					return;
 				}
@@ -2036,10 +2058,12 @@ public class WalkToActionHandler {
 			player.getActionSender().sendMessage("This npc is not interested in talking with you right now.");
 			return;
 		}
-		if(npc.getNpcId() != HorrorFromTheDeep.SITTING_JOSSIK) {
+		int id = npc.getNpcId();
+		if(!npc.isBoothBanker() && id != HorrorFromTheDeep.SITTING_JOSSIK && id != 1423 && id != 1424) {
 		    npc.setInteractingEntity(player);
 		}
 		World.submit(new Tick(1, true) {
+			int count = 0;
 			@Override
 			public void execute() {
 				if (player == null || !player.checkTask(task) || npc.isDead()) {
@@ -2047,21 +2071,17 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (npc.isBoothBanker()) {
-					if (npc.getCorrectStandPosition(player.getPosition(), 2)) {
-						npc.getUpdateFlags().faceEntity(player.getFaceIndex());
-						player.setInteractingEntity(npc);
-						player.getUpdateFlags().faceEntity(npc.getFaceIndex());
-						if(player.getFightCavesWave() > 0 ) {
-						    player.getActionSender().sendMessage("You cannot bank with a Fight Caves wave saved! Use ::resetcaves if needed.");
-						    this.stop();
-						}
-						else {
-						    Dialogues.startDialogue(player, player.getClickId());
-						}
-						Following.resetFollow(player);
-						this.stop();
-					}
+				    if(Misc.goodDistance(player.getPosition(), new Position(npc.getUpdateFlags().getFace().getX(), npc.getUpdateFlags().getFace().getY(), player.getPosition().getZ()), 1)) {
+					player.setInteractingEntity(npc);
+					player.getUpdateFlags().faceEntity(npc.getFaceIndex());
+					Dialogues.startDialogue(player, player.getClickId());
+					Following.resetFollow(player);
+					this.stop();
 					return;
+				    } else {
+					ClippedPathFinder.getPathFinder().findRoute(player, player.getClickX(), player.getClickY(), true, 0, 0);
+					return;
+				    }
 				}
 				if (!player.goodDistanceEntity(npc, 1) || player.inEntity(npc)) {
 					return;
@@ -2074,11 +2094,15 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				if (!Misc.checkClip(player.getPosition(), npc.getPosition(), true)) {
+				if (!Misc.checkClip(player.getPosition(), npc.getPosition(), true))
+				{
+				    if(npc.getNpcId() != 2290 && npc.getNpcId() != 2287 && npc.getNpcId() != 2289 && !npc.isBoothBanker() && npc.getNpcId() != 1461 && npc.getNpcId() != 1462 && npc.getNpcId() != 1469 && npc.getNpcId() != 1436) { //Exceptions
 					return;
+				    }
 				}
 				Following.resetFollow(player);
-				if(npc.getNpcId() != HorrorFromTheDeep.SITTING_JOSSIK) {
+				int id = npc.getNpcId();
+				if(!npc.isBoothBanker() && id != HorrorFromTheDeep.SITTING_JOSSIK && id != 1423 && id != 1424) {
 				    npc.getUpdateFlags().faceEntity(player.getFaceIndex());
 				}
 				player.setInteractingEntity(npc);
@@ -2171,21 +2195,17 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (npc.isBoothBanker()) {
-					if (npc.getCorrectStandPosition(player.getPosition(), 2)) {
-						npc.getUpdateFlags().faceEntity(player.getFaceIndex());
-						player.setInteractingEntity(npc);
-						player.getUpdateFlags().faceEntity(npc.getFaceIndex());
-						if(player.getFightCavesWave() > 0 ) {
-						    player.getActionSender().sendMessage("You cannot bank with a Fight Caves wave saved! Use ::resetcaves if needed.");
-						    this.stop();
-						}
-						else {
-							player.getBankManager().openBank();
-						}
-						Following.resetFollow(player);
-						this.stop();
-					}
+				    if(Misc.goodDistance(player.getPosition(), new Position(npc.getUpdateFlags().getFace().getX(), npc.getUpdateFlags().getFace().getY(), player.getPosition().getZ()), 1)) {
+					player.setInteractingEntity(npc);
+					player.getUpdateFlags().faceEntity(npc.getFaceIndex());
+					player.getBankManager().openBank();
+					Following.resetFollow(player);
+					this.stop();
 					return;
+				    } else {
+					ClippedPathFinder.getPathFinder().findRoute(player, player.getClickX(), player.getClickY(), true, 0, 0);
+					return;
+				    }
 				}
 				if (!player.goodDistanceEntity(npc, 1) || player.inEntity(npc)) {
 					return;
@@ -2198,7 +2218,9 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (!Misc.checkClip(player.getPosition(), npc.getPosition(), true)) {
+				    if(npc.getNpcId() != 1436) { //Exceptions
 					return;
+				    }
 				}
 				Following.resetFollow(player);
 				player.getUpdateFlags().faceEntity(npc.getFaceIndex());
@@ -2206,7 +2228,9 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				npc.getUpdateFlags().faceEntity(player.getFaceIndex());
+				if(!npc.isBoothBanker()) {
+				    npc.getUpdateFlags().faceEntity(player.getFaceIndex());
+				}
 				player.setInteractingEntity(npc);
 				if (Shops.openShop(player, npc.getNpcId())) {
 					this.stop();
@@ -2230,17 +2254,11 @@ public class WalkToActionHandler {
 					npc.getUpdateFlags().faceEntity(player.getFaceIndex());
 					player.setInteractingEntity(npc);
 					player.getUpdateFlags().faceEntity(npc.getFaceIndex());
-					if(player.getFightCavesWave() > 0 ) {
-					    player.getActionSender().sendMessage("You cannot bank with a Fight Caves wave saved! Use ::resetcaves if needed.");
-					    break;
-					}
-					else {
-						player.getBankManager().openBank();
-					}
+					player.getBankManager().openBank();
 					Following.resetFollow(player);
 					break;
-				case PestControlExpHandler.EXP_LADY:
-					PestControlExpHandler.openInterface(player);
+				case PestControlRewardHandler.EXP_LADY:
+					PestControlRewardHandler.openInterface(player);
 					break;
 				case 2437:
 					Dialogues.sendDialogue(player, 2437, 4, 0);
@@ -2533,10 +2551,6 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				    }
-				}
-				if(Ectofungus.doItemOnObject(player, id, item)) {
-					this.stop();
-					return;
 				}
 				if (id == 3044 && player.getNewComersSide().isInTutorialIslandStage() && (item == 438 || item == 436)) {
 					Smelting.oreOnFurnace(player, item);
@@ -2916,13 +2930,7 @@ public class WalkToActionHandler {
 	return false;
     }
 	private static boolean canInteractWithObject(Player player, Position objectPos, GameObjectDef def) {
-		if (def.getId() == 2638) {
-			return true;
-		}
-		if(def.getId() == 2142) {
-		    return true;
-		}
-		if(def.getId() == 4446 || def.getId() == 4447 || def.getId() == 5015)
+		if(def.getId() == 2638 || def.getId() == 2142 || def.getId() == 4446 || def.getId() == 4447 || def.getId() == 5015 || def.getId() == 10782 || (def.getId() >= 7272 && def.getId() <= 7287) || def.getId() == 4765 || def.getId() == 4766)
 		{
 			return true;
 		}

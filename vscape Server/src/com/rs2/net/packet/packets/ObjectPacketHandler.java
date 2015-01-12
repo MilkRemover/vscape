@@ -8,6 +8,7 @@ import com.rs2.model.content.dialogue.Dialogues;
 import com.rs2.model.content.quests.GhostsAhoy;
 import com.rs2.model.content.quests.HorrorFromTheDeep;
 import com.rs2.model.content.quests.PriestInPeril;
+import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.content.quests.VampireSlayer;
 import com.rs2.model.content.quests.WaterfallQuest;
 import com.rs2.model.content.skills.Crafting.GemCrafting;
@@ -18,20 +19,22 @@ import com.rs2.model.content.skills.SkillHandler;
 import com.rs2.model.content.skills.agility.Agility;
 import com.rs2.model.content.skills.magic.MagicSkill;
 import com.rs2.model.content.skills.magic.Spell;
-import com.rs2.model.content.skills.prayer.Ectofungus;
 import com.rs2.model.content.skills.smithing.Smelting;
 import com.rs2.model.objects.GameObject;
-import com.rs2.model.objects.functions.Ladders;
 import com.rs2.model.players.ObjectHandler;
 import com.rs2.model.players.Player;
 import com.rs2.model.players.WalkToActionHandler;
 import com.rs2.model.players.WalkToActionHandler.Actions;
 import com.rs2.model.players.item.Item;
 import com.rs2.model.players.item.ItemManager;
+import com.rs2.model.tick.CycleEvent;
+import com.rs2.model.tick.CycleEventContainer;
+import com.rs2.model.tick.CycleEventHandler;
 import com.rs2.net.StreamBuffer;
 import com.rs2.net.packet.Packet;
 import com.rs2.net.packet.PacketManager.PacketHandler;
 import com.rs2.util.Misc;
+import com.rs2.util.clip.ClippedPathFinder;
 
 public class ObjectPacketHandler implements PacketHandler {
 
@@ -72,7 +75,7 @@ public class ObjectPacketHandler implements PacketHandler {
 		}
 	}
 
-	private void handleItemOnObject(Player player, Packet packet) {
+	private void handleItemOnObject(final Player player, Packet packet) {
 		player.setInterfaceId(packet.getIn().readShort());
 		player.setClickId(packet.getIn().readShort(true, StreamBuffer.ByteOrder.LITTLE));
 		player.setClickY(packet.getIn().readShort(true, StreamBuffer.ValueType.A, StreamBuffer.ByteOrder.LITTLE));
@@ -99,6 +102,24 @@ public class ObjectPacketHandler implements PacketHandler {
 			player.setQuestStage(23, 9);
 			return;
 		    }
+		}
+		if(player.getClickId() == 4765 || player.getClickId() == 4766) {
+		    CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
+			@Override
+			public void execute(CycleEventContainer b) {
+			    if (Misc.goodDistance(player.getPosition(), new Position(player.getClickX(), player.getClickY(), player.getPosition().getZ()), 2)) {
+				QuestHandler.getQuests()[36].doItemOnObject(player, player.getClickId(), player.getClickItem());
+				b.stop();
+			    } else {
+				ClippedPathFinder.getPathFinder().findRoute(player, player.getClickX(), player.getClickY(), true, 0, 0);
+			    }
+			}
+
+			@Override
+			public void stop() {
+			}
+		    }, 2);
+		    
 		}
 		if(player.getClickId() == 2142) {
 		    if(player.getQuestStage(10) >= 2) {
@@ -190,10 +211,6 @@ public class ObjectPacketHandler implements PacketHandler {
 			player.setQuestStage(13, 10);
 			return;
 		    }
-		    return;
-		}
-		if (player.getClickId() == 1754 && player.getClickX() == 3653 && player.getClickY() == 3519) {
-		    Ladders.climbLadder(player, Ectofungus.DOWN_FROM_TRAPDOOR);
 		    return;
 		}
 		if(player.getClickId() == 2401) { //black arm open cupboard

@@ -6,10 +6,11 @@ import com.rs2.model.Position;
 import com.rs2.model.content.combat.util.Degradeables;
 import com.rs2.model.content.combat.util.Degrading;
 import com.rs2.model.content.minigames.castlewars.impl.CatapultInterface;
-import com.rs2.model.content.minigames.pestcontrol.PestControlExpHandler;
+import com.rs2.model.content.minigames.pestcontrol.PestControlRewardHandler;
 import com.rs2.model.content.quests.DwarfCannon;
 import com.rs2.model.content.quests.FamilyCrest;
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.RecruitmentDrive;
 import com.rs2.model.content.randomevents.TalkToEvent;
 import com.rs2.model.content.skills.SkillsX;
 import com.rs2.model.content.skills.Crafting.DramenBranch;
@@ -29,7 +30,7 @@ import com.rs2.model.content.skills.cooking.SliceDiceHandler;
 import com.rs2.model.content.skills.magic.BoltEnchanting;
 import com.rs2.model.content.skills.magic.MagicSkill;
 import com.rs2.model.content.skills.magic.Spell;
-import com.rs2.model.content.skills.prayer.Ectofungus;
+import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.skills.smithing.Smelting;
 import com.rs2.model.content.treasuretrails.Sextant;
 import com.rs2.model.ground.GroundItem;
@@ -224,7 +225,6 @@ public class ButtonPacketHandler implements PacketHandler {
 			case 153 :
 				if (player.getNewComersSide().getTutorialIslandStage() == 22)
 					player.getNewComersSide().setTutorialIslandStage(player.getNewComersSide().getTutorialIslandStage() + 1, true);
-
 				player.getMovementHandler().setRunToggled(true);
 				return;
 			case 74214 :	
@@ -482,6 +482,11 @@ public class ButtonPacketHandler implements PacketHandler {
                     player.getActionSender().sendMessage("You can't logout while in Castle wars!");
                     return;
                 }
+		if(player.inMageTrainingArena())
+                {
+                    player.getActionSender().sendMessage("You can't logout while in a Mage Training room!");
+                    return;
+                }
 				player.getActionSender().sendLogout();
 				return;
 		}
@@ -537,13 +542,16 @@ public class ButtonPacketHandler implements PacketHandler {
 		if (SilverCrafting.makeSilver(player, buttonId, 0)) {
 			return;
 		}
-		if (Ectofungus.handleButtons(player, buttonId)) {
+		if (Ectofuntus.handleButtons(player, buttonId)) {
 			return;
 		}
 		if (FamilyCrest.buttonHandling(player, buttonId)) {
 			return;
 		}
 		if (DwarfCannon.buttonHandling(player, buttonId)) {
+			return;
+		}
+		if(RecruitmentDrive.buttonHandling(player, buttonId)) {
 			return;
 		}
 		if (Spinning.spin(player, buttonId, 0)) {
@@ -579,7 +587,7 @@ public class ButtonPacketHandler implements PacketHandler {
 		if (SliceDiceHandler.handleButtons(player, buttonId, 0)) {
 			return;
 		}
-		if (PestControlExpHandler.handleButtons(player, buttonId)) {
+		if (PestControlRewardHandler.handleButtons(player, buttonId)) {
 			return;
 		}
 		if (Smelting.handleSmelting(player, buttonId, 0)) {

@@ -101,7 +101,7 @@ public final class PlayerUpdating {
 		if(BlackKnightsFortress.attackPlayer(player)) {
 		    BlackKnightsFortress.attackPlayer(player, true);
 		}
-		if(ChristmasEvent.CHRISTMAS_ENABLED && player.Area(3175, 3235, 3410, 3470) && !player.christmasUpdated && player.getLoginStage().equals(LoginStages.LOGGED_IN)) {
+		/*if(ChristmasEvent.CHRISTMAS_ENABLED && player.Area(3175, 3235, 3410, 3470) && !player.christmasUpdated && player.getLoginStage().equals(LoginStages.LOGGED_IN)) {
 		    player.christmasUpdated = true;
 		    final Player finalPlayer = player;
 		    CycleEventHandler.getInstance().addEvent(finalPlayer, new CycleEvent() {
@@ -115,7 +115,7 @@ public final class PlayerUpdating {
 			    finalPlayer.reloadRegion();
 			}
 		    }, 2);
-		} 
+		}*/
 		if(player.getPosition().getY() > 3312 && player.getPosition().getY() < 3400 && player.getPosition().getX() > 3068 && player.getPosition().getX() < 3145) {
 		    for(Npc npc : World.getNpcs()) {
 			if(npc == null || npc.getNpcId() != AnimalMagnetism.UNDEAD_TREE) continue;
@@ -137,15 +137,6 @@ public final class PlayerUpdating {
 			}
 		    }
 		}
-		/*if(player.getPosition().getX() > 3600) {
-		    for(Npc npc : World.getNpcs()) {
-			if(npc == null) continue;
-			if(npc.getNpcId() == 1688 && npc.getPosition().isViewableFrom(player.getPosition())) {
-			    npc.getUpdateFlags().sendAnimation(2061);
-			    npc.getUpdateFlags().setAnimationDelay(0);
-			}
-		    }
-		}*/
 		// Update other local players.
 		out.writeBits(8, player.getPlayers().size());
 		for (Iterator<Player> i = player.getPlayers().iterator(); i.hasNext();) {

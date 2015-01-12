@@ -25,6 +25,7 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		characterObj.addProperty("password", player.getPassword());
 		characterObj.addProperty("rights", player.getStaffRights());
 		characterObj.addProperty("mac", player.getMacAddress());
+		characterObj.addProperty("host", player.getHost());
 		characterObj.addProperty("muteExpire", player.getMuteExpire());
 		characterObj.addProperty("banExpire", player.getBanExpire());
 		characterObj.addProperty("inJail", player.getInJail());
@@ -113,6 +114,9 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		
 		JsonObject worldDataObj = new JsonObject();
 		worldDataObj.addProperty("coaltrucks", player.getCoalTruckAmount());
+		worldDataObj.addProperty("ectoGrinderBoneType", player.getEctofuntus().boneType.boneId);
+		worldDataObj.addProperty("bonesInLoader", player.getEctofuntus().getBonesInLoader().size());
+		worldDataObj.addProperty("bonemealInBin", player.getEctofuntus().getBonemealInBin().size());
 		worldDataObj.addProperty("brimhavenOpen", player.isBrimhavenDungeonOpen());
 		characterObj.add("worldData", worldDataObj);
 		
@@ -259,12 +263,22 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		questVarsObj.addProperty("idPapers", player.givenIdPapers());
 		questVarsObj.addProperty("hasShotGrip", player.hasShotGrip());
 		questVarsObj.addProperty("ballistaIndex", player.getBallistaIndex());
+		questVarsObj.addProperty("gazeOfSaradomin", player.isGazeOfSaradomin());
 		questObj.add("questVars", questVarsObj);
 		JsonObject monkeyMadnessVarsObj = new JsonObject();
-		//if(player.getQuestStage(34) > 0) {
+		if(player.getQuestStage(36) > 0) {
+		    monkeyMadnessVarsObj.addProperty("spokenMonkeyChild", player.getMMVars().spokenToMonkeyChild());
 		    monkeyMadnessVarsObj.addProperty("monkeyChildBananas", player.getMMVars().givenMonkeyChildBananas());
 		    monkeyMadnessVarsObj.addProperty("monkeyChildToy", player.getMMVars().monkeyChildHasToy());
-		//}
+		    monkeyMadnessVarsObj.addProperty("openGate", player.getMMVars().openGate());
+		    monkeyMadnessVarsObj.addProperty("firstTimeJail", player.getMMVars().firstTimeJail());
+		    monkeyMadnessVarsObj.addProperty("canHideInGrass", player.getMMVars().canHideInGrass());
+		    monkeyMadnessVarsObj.addProperty("gotAmulet", player.getMMVars().gotAmulet());
+		    monkeyMadnessVarsObj.addProperty("gotTalisman", player.getMMVars().gotTalisman());
+		    monkeyMadnessVarsObj.addProperty("monkeyPetDeleted", player.getMMVars().monkeyPetDeleted);
+		    monkeyMadnessVarsObj.addProperty("recievedClue", player.getMMVars().recievedClueFromMonkey());
+		    monkeyMadnessVarsObj.addProperty("trainingComplete", player.getMMVars().trainingComplete());
+		}
 		questObj.add("monkeyMadnessVars", monkeyMadnessVarsObj);
 		JsonArray questArray = new JsonArray();
 		for(Quest q : QuestHandler.getQuests())
@@ -299,13 +313,23 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		fightCavesObj.addProperty("wave", player.getFightCavesWave());
 		minigameObj.add("fightCaves", fightCavesObj);
 		JsonObject mageTrainingArenaObj = new JsonObject();
-		mageTrainingArenaObj.addProperty("enchantingPizazz", player.getEnchantingPizazz());
-		mageTrainingArenaObj.addProperty("enchantCount", player.getEnchantingEnchantCount());
-		mageTrainingArenaObj.addProperty("orbCount", player.getEnchantingOrbCount());
-		mageTrainingArenaObj.addProperty("alchemistPizazz", player.getAlchemistPizazz());
-		mageTrainingArenaObj.addProperty("graveyardPizazz", player.getGraveyardPizazz());
-		mageTrainingArenaObj.addProperty("graveyardFruitDeposited", player.getGraveyardFruitDeposited());
-		mageTrainingArenaObj.addProperty("bonesToPeachesEnabled", player.bonesToPeachesEnabled());
+		JsonObject enchantingChamberObj = new JsonObject();
+		JsonObject alchemistPlaygroundObj = new JsonObject();
+		JsonObject creatureGraveyardObj = new JsonObject();
+		JsonObject telekineticTheatreObj = new JsonObject();
+		enchantingChamberObj.addProperty("pizazzPoints", player.getEnchantingPizazz());
+		enchantingChamberObj.addProperty("enchantCount", player.getEnchantingEnchantCount());
+		enchantingChamberObj.addProperty("orbCount", player.getEnchantingOrbCount());
+		alchemistPlaygroundObj.addProperty("pizazzPoints", player.getAlchemistPizazz());
+		creatureGraveyardObj.addProperty("pizazzPoints", player.getGraveyardPizazz());
+		creatureGraveyardObj.addProperty("graveyardFruitDeposited", player.getGraveyardFruitDeposited());
+		creatureGraveyardObj.addProperty("bonesToPeachesEnabled", player.bonesToPeachesEnabled());
+		telekineticTheatreObj.addProperty("pizazzPoints", player.getTelekineticPizazz());
+		telekineticTheatreObj.addProperty("mazesCompleted", player.getTelekineticMazesCompleted());
+		mageTrainingArenaObj.add("enchantingChamber", enchantingChamberObj);
+		mageTrainingArenaObj.add("alchemistPlayground", alchemistPlaygroundObj);
+		mageTrainingArenaObj.add("creatureGraveyard", creatureGraveyardObj);
+		mageTrainingArenaObj.add("telekineticTheatre", telekineticTheatreObj);
 		minigameObj.add("mageTrainingArena", mageTrainingArenaObj);
 		
 		JsonObject farmingObj = new JsonObject();

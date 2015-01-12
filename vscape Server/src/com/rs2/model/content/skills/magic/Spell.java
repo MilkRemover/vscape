@@ -16,6 +16,7 @@ import com.rs2.model.content.combat.projectile.ProjectileDef;
 import com.rs2.model.content.combat.projectile.ProjectileTrajectory;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.players.item.Item;
+import com.rs2.util.Misc;
 
 
 
@@ -150,7 +151,13 @@ public enum Spell {
 	KOLODION1(62, 711, Graphic.highGraphic(158), 36, new Item[]{new Item(Runes.AIR, 5), new Item(Runes.BLOOD)}, magicHit(17, magicProjectile(159), Graphic.highGraphic(160)), true),
 	KOLODION2(65, 132, Graphic.highGraphic(161), 37.5, new Item[]{new Item(Runes.AIR, 5), new Item(Runes.BLOOD), new Item(Runes.WATER, 7)}, magicHit(20, magicProjectile(162), Graphic.highGraphic(163)), true),
 	KOLODION4(75, 711, Graphic.highGraphic(155), 42.5, new Item[]{new Item(Runes.AIR, 5), new Item(Runes.BLOOD), new Item(Runes.FIRE, 7)}, magicHit(25, magicProjectile(156), Graphic.highGraphic(157)), true),
-	
+	KBD_POISON(82, magicHit(50, magicProjectile(394), null), true, new PoisonEffect(5)),
+	KBD_SHOCK(82, magicHit(50, magicProjectile(396), null), true, new StatEffect(Misc.random(5), 2)),
+	KBD_FREEZE(82, magicHit(50, magicProjectile(395), null), true, new BindingEffect(10)),
+	JUNGLE_DEMON_BLAST_1(69, magicHit(32, magicProjectile(159), Graphic.highGraphic(160)), true),
+	JUNGLE_DEMON_BLAST_2(69, magicHit(32, magicProjectile(162), Graphic.highGraphic(163)), true),
+	JUNGLE_DEMON_BLAST_3(69, magicHit(32, magicProjectile(165), Graphic.highGraphic(166)), true),
+	JUNGLE_DEMON_BLAST_4(69, magicHit(32, magicProjectile(156), Graphic.highGraphic(157)), true),
 	/*End*/;
 
 	private int levelRequired, animation;

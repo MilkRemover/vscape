@@ -11,16 +11,20 @@ import com.rs2.model.content.minigames.warriorsguild.WarriorsGuild;
 import com.rs2.model.content.minigames.barrows.Barrows;
 import com.rs2.model.content.minigames.castlewars.CastlewarsExchange;
 import com.rs2.model.content.minigames.castlewars.impl.CastlewarsBarricades;
+import com.rs2.model.content.minigames.magetrainingarena.AlchemistPlayground;
 import com.rs2.model.content.minigames.magetrainingarena.MageRewardHandling;
+import com.rs2.model.content.minigames.magetrainingarena.TelekineticTheatre;
 import com.rs2.model.content.quests.DemonSlayer;
 import com.rs2.model.content.quests.DwarfCannon;
 import com.rs2.model.content.quests.GhostsAhoy;
 import com.rs2.model.content.quests.HeroesQuest;
 import com.rs2.model.content.quests.MerlinsCrystal;
 import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
 import com.rs2.model.content.quests.PiratesTreasure;
 import com.rs2.model.content.quests.Quest;
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.RecruitmentDrive;
 import com.rs2.model.content.quests.TheGrandTree;
 import com.rs2.model.content.skills.Menus;
 import com.rs2.model.content.skills.Tools;
@@ -210,6 +214,15 @@ public class ItemPacketHandler implements PacketHandler {
 	if (!player.getInventory().getItemContainer().contains(item.getId())) {
 	    return;
 	}
+	if (player.inTempleKnightsTraining()) {
+	    if(item.getId() == RecruitmentDrive.FOX || item.getId() == RecruitmentDrive.GRAIN || item.getId() == RecruitmentDrive.CHICKEN) {
+		player.getActionSender().sendSound(376, 1, 0);
+		player.getInventory().removeItem(item);
+		player.getEquipment().updateWeight();
+		RecruitmentDrive.handleDropItem(player, item);
+		return;
+	    }
+	}
 	if (item.getId() == 530 && player.getPosition().getX() == 2780 && player.getPosition().getY() == 3515) {
 	    if (player.getInventory().playerHasItem(32)) {
 		player.getInventory().removeItem(new Item(530));
@@ -230,7 +243,7 @@ public class ItemPacketHandler implements PacketHandler {
 	    if (!player.getInventory().removeItemSlot(item, player.getSlot())) {
 	    	player.getInventory().removeItem(item);
 	    }
-	    player.getUpdateFlags().sendForceMessage("ow!");
+	    player.getUpdateFlags().sendForceMessage("Ow!");
 	    player.getActionSender().sendMessage("You were injured by the exploding potion.");
 	    return;
 	}
@@ -240,6 +253,16 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	if (item.getId() == 6541) {
 	    player.getActionSender().sendMessage("You don't want to destroy your pet!");
+	    return;
+	}
+	if (item.getId() == 4033 && player.getQuestStage(36) >= 14) {
+	    player.getDialogue().setLastNpcTalk(1463);
+	    if(player.getEquipment().getId(Constants.AMULET) == MonkeyMadness.MONKEYSPEAK_AMULET) {
+		player.getDialogue().sendNpcChat("Don't drop me! You said you'd rescue me!", Dialogues.SAD);
+	    } else {
+		player.getDialogue().sendNpcChat("OOK! OOK!", Dialogues.DISTRESSED);
+	    }
+	    player.getDialogue().endDialogue();
 	    return;
 	}
 	if(player.getCat().registerCat(item.getId()))
@@ -352,6 +375,18 @@ public class ItemPacketHandler implements PacketHandler {
 	if ((firstItem == GlassMaking.GLASSBLOWING_PIPE && secondItem == GlassMaking.MOLTEN_GLASS) || (secondItem == GlassMaking.GLASSBLOWING_PIPE && firstItem == GlassMaking.MOLTEN_GLASS)) {
 	    Menus.sendSkillMenu(player, "glassMaking");
 	    return;
+	}
+	if(firstItem == 1963 && secondItem == MonkeyMadness.MONKEY_ITEM) {
+	    if(Misc.random(10) == 1 && !player.hasClueScroll()) {
+		player.getActionSender().sendMessage("The monkey chews on the banana and spits out a clue!");
+		player.getInventory().replaceItemWithItem(new Item(1963), new Item(ClueScroll.getRandomClue(2)));
+		player.getMMVars().setRecievedClueFromMonkey(true);
+		return;
+	    } else {
+		player.getActionSender().sendMessage("The monkey chews on the banana, it makes some happy chatter.");
+		player.getInventory().removeItem(new Item(1963));
+		return;
+	    }
 	}
 	/* STRINGING AMULETS */
 	for (int i = 0; i < GemData.stringItems.length; i++) {
@@ -476,6 +511,10 @@ public class ItemPacketHandler implements PacketHandler {
 	player.setClickId(packet.getIn().readShort());
 	player.setClickX(packet.getIn().readShort(StreamBuffer.ByteOrder.LITTLE));
 	player.setClickZ(player.getPosition().getZ());
+	if(player.getClickId() == TelekineticTheatre.STATUE) {
+	    player.getTelekineticTheatre().loadCamera();
+	    return;
+	}
 	if (!player.getInventory().canAddItem(new Item(player.getClickId()))) {
 	    return;
 	}
@@ -505,6 +544,10 @@ public class ItemPacketHandler implements PacketHandler {
 	player.setClickY(packet.getIn().readShort(StreamBuffer.ValueType.A, StreamBuffer.ByteOrder.LITTLE));
 	player.setClickId(packet.getIn().readShort(StreamBuffer.ValueType.A));
 	player.setClickZ(player.getPosition().getZ());
+	if(player.getClickId() == TelekineticTheatre.STATUE) {
+	    player.getTelekineticTheatre().resetStatue();
+	    return;
+	}
 	if (player.getStaffRights() > 1 && Constants.SERVER_DEBUG) {
 	    System.out.println(player.getClickX() + " " + player.getClickY());
 	}
@@ -832,6 +875,10 @@ public class ItemPacketHandler implements PacketHandler {
 	    return;
 	}
 	if (QuestHandler.getQuests()[26].itemHandling(player, itemId)) { //Horror from the deep
+	    return;
+	}
+	if (itemId == 6885) { //Mage Training hat
+	    Dialogues.startDialogue(player, 3096);
 	    return;
 	}
 	if (itemId == Slayer.ENCHANTED_GEM) {
@@ -1195,6 +1242,21 @@ public class ItemPacketHandler implements PacketHandler {
 	if (!player.hasInterfaceOpen(inter)) {
 	    return;
 	}
+	if (player.inTempleKnightsTraining()) {
+	    if(itemId == 5607 || itemId == 5608 || itemId == 5609) {
+		player.getDialogue().sendPlayerChat("I had better just carry this across in my backpack.", Dialogues.CONTENT);
+		player.getDialogue().endDialogue();
+		return;
+	    }
+	}
+	if(itemId == 4035 && player.getQuestStage(36) == 19 && !player.Area(2688, 2748, 9154, 9214)) {
+	    Dialogues.startDialogue(player, 885789);
+	    return;
+	}
+	if (itemId == 6893 || itemId == 6894 || itemId == 6895 || itemId == 6897 || itemId == 5607 || itemId == 5608 || itemId == 5609) {
+	    player.getActionSender().sendMessage("You cannot equip this item.");
+	    return;
+	}
 	if (itemId == 6722){
 		player.getUpdateFlags().sendAnimation(2844);
 		player.getUpdateFlags().setForceChatMessage("Muahahahah!");
@@ -1250,14 +1312,6 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	if (spell != null) {
 	    MagicSkill.spellOnItem(player, spell, itemId, player.getSlot());
-	}
-	if (player.getEnchantingChamber().isInEnchantingChamber()) {
-	    player.getEnchantingChamber().enchantItem(magicId, itemId);
-	    return;
-	}
-	if (player.getAlchemistPlayground().isInAlchemistPlayGround()) {
-	    player.getAlchemistPlayground().alchItem(itemId);
-	    return;
 	} else if (player.getStaffRights() > 1 && Constants.SERVER_DEBUG) {
 	    System.out.println("Slot: " + player.getSlot() + " Item id: " + itemId + " Interface ID: " + player.getInterfaceId() + " magic id: " + magicId);
 	}
@@ -1322,6 +1376,9 @@ public class ItemPacketHandler implements PacketHandler {
 		} else {
 		    player.getActionSender().sendMessage("You have no charges left!");
 		}
+		return;
+	    case 6885: //Mage Training hat
+		Dialogues.startDialogue(player, 3096);
 		return;
 	    case 4566: // rubber chicken
 		player.getUpdateFlags().sendAnimation(1835);

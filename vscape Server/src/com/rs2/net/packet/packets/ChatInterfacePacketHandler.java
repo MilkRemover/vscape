@@ -14,7 +14,7 @@ import com.rs2.model.content.skills.Crafting.Weaving;
 import com.rs2.model.content.skills.Fletching.HandleLogCutting;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.cooking.Cooking;
-import com.rs2.model.content.skills.prayer.Ectofungus;
+import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.skills.smithing.Smelting;
 import com.rs2.model.content.treasuretrails.ChallengeScrolls;
 import com.rs2.model.players.Player;
@@ -47,9 +47,6 @@ public class ChatInterfacePacketHandler implements PacketHandler {
 	}
 
 	private void handleDialogue(Player player, Packet packet) {
-		if (Constants.SERVER_DEBUG) {
-			System.out.println("dialogue: "+player.getDialogue().getDialogueId()+" chat: "+player.getDialogue().getChatId());
-		}
 		if(player.getPetition().sendDialogue(player, player.getDialogue().getLastNpcTalk(), player.getPetition().getChatId() + 1, 0)) {
 		    return;
 		}
@@ -58,7 +55,7 @@ public class ChatInterfacePacketHandler implements PacketHandler {
 			player.getDialogue().resetDialogue();
 			return;
 		}
-		    Dialogues.sendDialogue(player, player.getDialogue().getDialogueId(), player.getDialogue().getChatId() + 1, 0);
+		Dialogues.sendDialogue(player, player.getDialogue().getDialogueId(), player.getDialogue().getChatId() + 1, 0);
 	}
 
 	private void showEnterX(Player player, Packet packet) {
@@ -135,7 +132,7 @@ public class ChatInterfacePacketHandler implements PacketHandler {
 		}
 		else if (player.getEnterXInterfaceId() == 6212) {
 		    if(player.getStatedInterface().equals("Ectoplasm")) {
-			Ectofungus.handleFillTick(player, amount);
+			Ectofuntus.handleFillTick(player, amount);
 			return;
 		    } else if(player.getStatedInterface().equals("cannonball")) {
 			DwarfCannon.craftCannonBall(player, amount);

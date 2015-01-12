@@ -20,6 +20,7 @@ import com.rs2.model.content.combat.hit.HitType;
 import com.rs2.model.content.quests.Quest;
 import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.content.skills.magic.SpellBook;
+import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.treasuretrails.ClueScroll;
 import com.rs2.model.players.Player.BankOptions;
 import com.rs2.model.players.bank.BankManager;
@@ -183,6 +184,21 @@ public class PlayerSaveParser {
                 JsonObject worldData = characterObj.getAsJsonObject("worldData");
                 if(worldData != null){
 	                player.setCoalTruckAmount(worldData.get("coaltrucks").getAsInt());
+			if(worldData.get("ectoGrinderBoneType") != null) {
+			    player.getEctofuntus().boneType = Ectofuntus.BonemealData.forBoneId(worldData.get("ectoGrinderBoneType").getAsInt());
+			}
+			if(worldData.get("bonesInLoader") != null) {
+			    int amount = worldData.get("bonesInLoader").getAsInt();
+			    for(int i = 0; i < amount; i++) {
+				player.getEctofuntus().getBonesInLoader().add(i, Ectofuntus.BonemealData.forBoneId(player.getEctofuntus().boneType.boneId));
+			    }
+			}
+			if(worldData.get("bonemealInBin") != null) {
+			    int amount = worldData.get("bonemealInBin").getAsInt();
+			    for(int i = 0; i < amount; i++) {
+				player.getEctofuntus().getBonemealInBin().add(i, Ectofuntus.BonemealData.forBoneId(player.getEctofuntus().boneType.boneId));
+			    }
+			}
 	                player.setBrimhavenDungeonOpen(worldData.get("brimhavenOpen").getAsBoolean());
                 }
                 JsonObject npcData = characterObj.getAsJsonObject("npcData");
@@ -403,14 +419,44 @@ public class PlayerSaveParser {
 				if(questVars.get("ballistaIndex") != null){
 		            		player.setBallistaIndex(questVars.get("ballistaIndex").getAsInt());
 		            	}
+				if(questVars.get("gazeOfSaradomin") != null) {
+					player.setGazeOfSaradomin(questVars.get("gazeOfSaradomin").getAsBoolean());
+				}
 		            }
 			    JsonObject MMVars = quests.getAsJsonObject("monkeyMadnessVars");
 				if(MMVars != null) {
+				    if(MMVars.get("spokenMonkeyChild") != null) {
+					player.getMMVars().setSpokenToMonkeyChild(MMVars.get("spokenMonkeyChild").getAsBoolean());
+				    }
 				    if(MMVars.get("monkeyChildBananas") != null) {
 					player.getMMVars().setGivenMonkeyChildBananas(MMVars.get("monkeyChildBananas").getAsBoolean());
 				    }
 				    if(MMVars.get("monkeyChildToy") != null) {
 					player.getMMVars().setMonkeyChildHasToy(MMVars.get("monkeyChildToy").getAsBoolean());
+				    }
+				    if(MMVars.get("openGate") != null) {
+					player.getMMVars().setOpenGate(MMVars.get("openGate").getAsBoolean());
+				    }
+				    if(MMVars.get("canHideInGrass") != null) {
+					player.getMMVars().setCanHideInGrass(MMVars.get("canHideInGrass").getAsBoolean());
+				    }
+				    if(MMVars.get("firstTimeJail") != null) {
+					player.getMMVars().setFirstTimeJail(MMVars.get("firstTimeJail").getAsBoolean());
+				    }
+				    if(MMVars.get("gotAmulet") != null) {
+					player.getMMVars().setGotAmulet(MMVars.get("gotAmulet").getAsBoolean());
+				    }
+				    if(MMVars.get("gotTalisman") != null) {
+					player.getMMVars().setGotTalisman(MMVars.get("gotTalisman").getAsBoolean());
+				    }
+				    if(MMVars.get("monkeyPetDeleted") != null) {
+					player.getMMVars().monkeyPetDeleted = MMVars.get("monkeyPetDeleted").getAsBoolean();
+				    }
+				    if(MMVars.get("trainingComplete") != null) {
+					player.getMMVars().setTrainingComplete(MMVars.get("trainingComplete").getAsBoolean());
+				    }
+				    if(MMVars.get("recievedClue") != null) {
+					player.getMMVars().setRecievedClueFromMonkey(MMVars.get("recievedClue").getAsBoolean());
 				    }
 				}
 	            	JsonArray questData = quests.getAsJsonArray("questData");
@@ -474,26 +520,44 @@ public class PlayerSaveParser {
 		            }
 			    JsonObject mageTrainingArena = minigames.getAsJsonObject("mageTrainingArena");
 		            if(mageTrainingArena != null){
-				if(mageTrainingArena.get("enchantingPizazz") != null) {
-				    player.setEnchantingPizazz(mageTrainingArena.get("enchantingPizazz").getAsInt());
+				JsonObject enchantingChamber = mageTrainingArena.getAsJsonObject("enchantingChamber");
+				if (enchantingChamber != null) {
+				    if (enchantingChamber.get("pizazzPoints") != null) {
+					player.setEnchantingPizazz(enchantingChamber.get("pizazzPoints").getAsInt());
+				    }
+				    if (enchantingChamber.get("enchantCount") != null) {
+					player.setEnchantingEnchantCount(enchantingChamber.get("enchantCount").getAsInt());
+				    }
+				    if (enchantingChamber.get("orbCount") != null) {
+					player.setEnchantingOrbCount(enchantingChamber.get("orbCount").getAsInt());
+				    }
 				}
-				if(mageTrainingArena.get("enchantCount") != null) {
-				    player.setEnchantingEnchantCount(mageTrainingArena.get("enchantCount").getAsInt());
+				JsonObject alchemistPlayground = mageTrainingArena.getAsJsonObject("alchemistPlayground");
+				if (alchemistPlayground != null) {
+				    if(alchemistPlayground.get("pizazzPoints") != null) {
+					player.setAlchemistPizazz(alchemistPlayground.get("pizazzPoints").getAsInt());
+				    }
 				}
-				if(mageTrainingArena.get("orbCount") != null) {
-				    player.setEnchantingOrbCount(mageTrainingArena.get("orbCount").getAsInt());
+				JsonObject creatureGraveyard = mageTrainingArena.getAsJsonObject("creatureGraveyard");
+				if (creatureGraveyard != null) {
+				    if (creatureGraveyard.get("pizazzPoints") != null) {
+					player.setGraveyardPizazz(creatureGraveyard.get("pizazzPoints").getAsInt());
+				    }
+				    if (creatureGraveyard.get("graveyardFruitDeposited") != null) {
+					player.setGraveyardFruitDeposited(creatureGraveyard.get("graveyardFruitDeposited").getAsInt());
+				    }
+				    if (creatureGraveyard.get("bonesToPeachesEnabled") != null) {
+					player.setBonesToPeachesEnabled(creatureGraveyard.get("bonesToPeachesEnabled").getAsBoolean());
+				    }
 				}
-				if(mageTrainingArena.get("alchemistPizazz") != null) {
-				    player.setAlchemistPizazz(mageTrainingArena.get("alchemistPizazz").getAsInt());
-				}
-				if(mageTrainingArena.get("graveyardPizazz") != null) {
-				    player.setGraveyardPizazz(mageTrainingArena.get("graveyardPizazz").getAsInt());
-				}
-				if(mageTrainingArena.get("graveyardFruitDeposited") != null) {
-				    player.setGraveyardFruitDeposited(mageTrainingArena.get("graveyardFruitDeposited").getAsInt());
-				}
-				if(mageTrainingArena.get("bonesToPeacheEnabled") != null) {
-				    player.setBonesToPeachesEnabled(mageTrainingArena.get("bonesToPeachesEnabled").getAsBoolean());
+				JsonObject telekineticTheatre = mageTrainingArena.getAsJsonObject("telekineticTheatre");
+				if (telekineticTheatre != null) {
+				    if(telekineticTheatre.get("pizazzPoints") != null) {
+					player.setTelekineticPizazz(telekineticTheatre.get("pizazzPoints").getAsInt());
+				    }
+				    if(telekineticTheatre.get("mazesCompleted") != null) {
+					player.setTelekineticMazesCompleted(telekineticTheatre.get("mazesCompleted").getAsInt());
+				    }
 				}
 		            }
 	            }

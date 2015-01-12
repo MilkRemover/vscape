@@ -27,6 +27,7 @@ import com.rs2.model.content.quests.PiratesTreasure;
 import com.rs2.model.content.quests.Quest;
 import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.RecruitmentDrive;
 import com.rs2.model.content.randomevents.SpawnEvent;
 import com.rs2.model.content.randomevents.TalkToEvent;
 import com.rs2.model.content.randomevents.SpawnEvent.RandomNpc;
@@ -36,6 +37,7 @@ import com.rs2.model.content.skills.runecrafting.TabHandler;
 import com.rs2.model.content.treasuretrails.SearchScrolls;
 import com.rs2.model.content.treasuretrails.CoordinateScrolls.CoordinateData;
 import com.rs2.model.npcs.Npc;
+import com.rs2.model.npcs.Npc.WalkType;
 import com.rs2.model.npcs.NpcDefinition;
 import com.rs2.model.npcs.drop.NpcDropController;
 import com.rs2.model.npcs.drop.NpcDropItem;
@@ -52,9 +54,14 @@ import com.rs2.util.NameUtil;
 import com.rs2.util.PlayerSave;
 import com.rs2.util.ShutdownWorldProcess;
 import com.rs2.util.sql.SQL;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
 
 public class CommandHandler {
 	
+	public static final Position[] forceSpacePositions = {new Position(3288, 3956, 0), new Position(3289, 3953, 0), new Position(3293, 3953, 0), new Position(3293, 3951, 0), new Position(3286, 3953, 0), new Position(3286, 3958, 0), new Position(3284, 3960, 0)};
 	/**
 	 * Handles a player command.
 	 * 
@@ -86,7 +93,11 @@ public class CommandHandler {
 			sender.disconnect();
 		}
 		if (keyword.equals("outfit")) {
+		    if(sender.getQuestStage(35) > 0 && sender.getQuestStage(35) < RecruitmentDrive.QUEST_COMPLETE) {
+			sender.getActionSender().sendMessage("You cannot use ::outfit during Recruitment Drive.");
+		    } else {
 			sender.getActionSender().sendInterface(3559);
+		    }
 		}
 		else if ( keyword.equals("highscores") || keyword.equals("highscore") || keyword.equals("hs") || keyword.equals("hiscores") )
 		{
@@ -389,7 +400,7 @@ public class CommandHandler {
 		}
 	    } else if (keyword.equals("mute")) {
             if (args.length < 2) {
-            	sender.getActionSender().sendMessage("::mute hours username");
+            	sender.getActionSender().sendMessage("::mute hours -username");
                 return;
             }
             int hours = Integer.parseInt(args[0]);
@@ -398,13 +409,12 @@ public class CommandHandler {
             	sender.getActionSender().sendMessage("Mute between 0 and "+maxHours+" hours");
                 return;
             }
-            name = "";
-            for (int i = 1; i < args.length; i++) {
-                name += args[i];
-            }
-            Player player = World.getPlayerByName(name);
+		    name = fullString.substring(fullString.indexOf("-")+1);
+		    long nameLong = NameUtil.nameToLong(NameUtil.uppercaseFirstLetter(name));
+		    Player player = World.getPlayerByName(nameLong);
             if (player == null) {
             	sender.getActionSender().sendMessage("Could not find "+name);
+            	sender.getActionSender().sendMessage("::mute hours -username");
                 return;
             }
             if (player.isMuted()) {
@@ -1002,7 +1012,7 @@ public class CommandHandler {
 	   	 	for (Player player : World.getPlayers()) { 
 	   	 		if (player == null) continue; 
 	   	 		if(player.getUsername().equalsIgnoreCase(name)) {
-	   	 			player.teleport(new Position(3108, 3954));
+	   	 			player.teleport(forceSpacePositions[Misc.randomMinusOne(forceSpacePositions.length)]);
 	   	 			player.getActionSender().sendMessage("You have been sent to space. Good luck escaping!"); 
 	   	 			return;
 	   	 		} 
@@ -1104,7 +1114,7 @@ public class CommandHandler {
 		    }
 		}
 		else if (keyword.equals("stillcamera")) {
-			sender.getActionSender().stillCamera(2515, 10008, Integer.parseInt(args[1]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+			sender.getActionSender().stillCamera(sender.getPosition().getX() + Integer.parseInt(args[0]), sender.getPosition().getY() + Integer.parseInt(args[1]), 0, 0, 0);
 		}
 		else if (keyword.equals("spincamera")) {
 			sender.getActionSender().spinCamera(sender.getPosition().getX(), sender.getPosition().getY(), Integer.parseInt(args[1]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
@@ -1452,6 +1462,36 @@ public class CommandHandler {
 			}
 			sender.getActionSender().sendMessage("You have " + count + " teammates on your team.");
 		}
+		else if (keyword.equals("getmac")) {
+			 String name = fullString;
+			 Player player = World.getPlayerByName(name);
+			 if(player != null)
+			 {
+			    sender.getActionSender().sendMessage("" + player.getUsername() + " has a MAC address of: " + player.getMacAddress());
+			 } else {
+				 sender.getActionSender().sendMessage("Could not find player "+ name);
+			 }
+		}
+		else if (keyword.equals("parsemacs") || keyword.equals("parsemac")) {
+		    String name = fullString;
+			 Player player = World.getPlayerByName(name);
+			 if(player != null)
+			 {
+			    parseMacList(sender, player.getMacAddress());
+			 } else {
+				 sender.getActionSender().sendMessage("Could not find player "+ name);
+			 }
+		}
+		else if (keyword.equals("gethost")) {
+			 String name = fullString;
+			 Player player = World.getPlayerByName(name);
+			 if(player != null)
+			 {
+			    sender.getActionSender().sendMessage("" + player.getUsername() + " has a host address of: " + player.getHost());
+			 } else {
+				 sender.getActionSender().sendMessage("Could not find player "+ name);
+			 }
+		}
 		else if (keyword.equals("teleto")) {
 			 String name = fullString;
 			 Player player = World.getPlayerByName(name);
@@ -1531,6 +1571,10 @@ public class CommandHandler {
 		}
 		else if (keyword.equals("mypos")) {
 			sender.getActionSender().sendMessage("You are at: " + sender.getPosition());
+			/*System.out.println("spawn = x	"+sender.getPosition().getX() + "	" +sender.getPosition().getY() + "	"+sender.getPosition().getZ() + "	1	Name");
+			if(sender.getStaffRights() == 2) {
+			    System.out.println("new " + sender.getPosition());
+			}*/
 		}
 		else if (keyword.equalsIgnoreCase("shiptest")) {
 			Sailing.sailShip(sender, Sailing.ShipRoute.values()[Integer.parseInt(args[0])], 0);
@@ -1566,6 +1610,7 @@ public class CommandHandler {
 		    for (int i = 0; i < sender.puzzleStoredItems.length; i++) {
 			sender.puzzleStoredItems[i] = new Item(sender.getPuzzle().getPuzzleIndex(sender.getPuzzle().index)[i]);
 		    }
+		    sender.getPuzzle().loadPuzzle();
 		}
 		else if (keyword.equals("barrowsreward")) {
 		    int amount = Integer.parseInt(args[0]);
@@ -1702,7 +1747,9 @@ public class CommandHandler {
     				continue;
     			if(!player.getHideYell())
     			{
+			    if(Constants.STAFF_ONLY_YELL) {
     				player.getActionSender().sendMessage("@red@Yell has been set to "+(Constants.STAFF_ONLY_YELL ? "staff-only" : "all-users") + " by "+NameUtil.formatName(sender.getUsername()));
+			    }
     			}
     		}
         }
@@ -1779,7 +1826,79 @@ public class CommandHandler {
 			}
 		}
 	}
+	public static ArrayList<String> macExists(String MAC) {
+		ArrayList<String> matching = new ArrayList<>();
+		int q = 0;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(new File("data/macs.txt")));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				if(line.contains(MAC) && q < 20) {
+				    matching.add(line.substring(line.indexOf("Username:")));
+				    q++;
+				}
+			}
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return matching;
+	}
 	
+	public static void parseMacList(Player player, String MAC) {
+		ArrayList<String> matching = macExists(MAC);
+		if(!matching.isEmpty()) {
+		    player.getActionSender().sendMessage("Parsing complete. Atleast " + (matching.size() - 1) + " matches logged. Check matchmacs.txt");
+		    String filePath = "./data/matchmacs.txt";
+		    try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(filePath, true));
+			try {
+			    String names = "";
+			    for(String entry : matching) {
+				names = names.concat(entry.substring(entry.indexOf(":") + 2) + ", ");
+			    }
+				out.write("MAC: " + MAC + " Usernames: " + names);
+				out.newLine();
+			} finally {
+				out.close();
+			}
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    }
+		} else {
+		    player.getActionSender().sendMessage("Parsing complete. No logged matches.");
+		}
+	}
+	
+	public static void appendToMacList(Player player, String MAC) {
+		boolean match = false;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(new File("data/macs.txt")));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				if(line.contains(MAC) && line.contains(player.getUsername())) {
+				    match = true;
+				}
+			}
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if(!match) {
+		String filePath = "./data/macs.txt";
+		    try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(filePath, true));
+			try {
+				out.write("MAC: " + MAC + " Username: " + player.getUsername());
+				out.newLine();
+			} finally {
+				out.close();
+			}
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    }
+		}
+	}
 
 	public static void appendToBugList(Player player, String bug) {
 		String filePath = "./data/bugs.txt";

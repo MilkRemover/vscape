@@ -21,7 +21,7 @@ public class Teleportation {
 	}
 
 	public static final Position HOME = new Position(Constants.LUMBRIDGE_X, Constants.LUMBRIDGE_Y, 0);
-
+	public static final Position WHITE_KNIGHTS_CASTLE = new Position(2973, 3344, 0);
 	public static final Position EDGEVILLE = new Position(3087, 3495);
 	public static final Position KARAMJA = new Position(2912, 3170);
 	public static final Position DRAYNOR_VILLAGE = new Position(3104, 3249);
@@ -41,16 +41,15 @@ public class Teleportation {
 	public static final Position CRAFTING_GUILD = new Position(2933, 3292);
 	public static final Position COOKING_GUILD = new Position(3143, 3442);
 	
-	
 	public int x, y, height, teleTimer;
 
-	public boolean attemptTeleport(Position pos) {
-		if (player.inWild() && player.getWildernessLevel() > 20) {
-			player.getActionSender().sendMessage("You can't teleport above level 20 in the wilderness.");
-			return false;
-		}
+	public boolean canTeleport() {
 		if(player.inFightCaves()) {
 		    player.getActionSender().sendMessage("You can't teleport here.");
+		    return false;
+		}
+		if (player.getMMVars().isMonkey()) {
+		    player.getActionSender().sendMessage("You cannot teleport while disguised as a monkey.");
 		    return false;
 		}
 		if (player.isTeleblocked()) {
@@ -72,6 +71,21 @@ public class Teleportation {
 		if (player.isHomeTeleporting()) {
 			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
 			return false;
+		}
+		return true;
+	}
+	
+	public boolean attemptTeleport(Position pos) {
+		if (player.inWild() && player.getWildernessLevel() > 20) {
+			player.getActionSender().sendMessage("You can't teleport above level 20 in the wilderness.");
+			return false;
+		}
+		if(!canTeleport()) {
+			return false;
+		}
+		if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+			player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+			player.getInventory().removeItem(new Item(4033));
 		}
 		teleport(pos.getX(), pos.getY(), pos.getZ(), player.getMagicBookType() == SpellBook.MODERN);
 		return true;
@@ -82,25 +96,12 @@ public class Teleportation {
 			player.getActionSender().sendMessage("You can't teleport above level 30 in the wilderness.");
 			return false;
 		}
-		if (player.isTeleblocked()) {
-			player.getActionSender().sendMessage("A magical force prevents you from teleporting.");
+		if(!canTeleport()) {
 			return false;
 		}
-		if (player.cantTeleport()) {
-			player.getActionSender().sendMessage("You can't teleport from here.");
-			return false;
-		}
-		if (player.getInventory().playerHasItem(new Item(431))) {
-			player.getActionSender().sendMessage("You cannot teleport with Karamjan Rum, it will break.");
-			return false;
-		}
-		if (player.isHomeTeleporting()) {
-			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-			return false;
-		}
-		if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return false;
+		if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+			player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+			player.getInventory().removeItem(new Item(4033));
 		}
 		player.getUpdateFlags().sendAnimation(714);
 		player.getUpdateFlags().sendHighGraphic(301);
@@ -111,31 +112,14 @@ public class Teleportation {
 	public boolean attemptEctophialTeleport(Position pos) {
 	    if (player.inWild() && player.getWildernessLevel() > 20) {
 		player.getActionSender().sendMessage("You can't teleport above level 20 in the wilderness.");
-		return false; //keep these false
-	    }
-	    if (player.isTeleblocked()) {
-		player.getActionSender().sendMessage("A magical force prevents you from teleporting.");
 		return false;
 	    }
-	    if (player.cantTeleport()) {
-		player.getActionSender().sendMessage("You can't teleport from here.");
+	    if(!canTeleport()) {
 		return false;
 	    }
-	    if(player.inFightCaves() || player.inPestControlGameArea() || player.inDuelArena()) {
-		    player.getActionSender().sendMessage("You can't teleport here.");
-		    return false;
-	    }
-	    if (player.isHomeTeleporting()) {
-		    player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-		    return false;
-	    }
-	    if (player.getInventory().playerHasItem(new Item(431))) {
-		    player.getActionSender().sendMessage("You cannot teleport with Karamjan Rum, it will break.");
-		    return false;
-	    }
-	    if (player.getInJail()){
-		    player.getActionSender().sendMessage("You cannot teleport while in jail.");
-		    return false;
+	    if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+		player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+		player.getInventory().removeItem(new Item(4033));
 	    }
 	    return true;
 	}
@@ -143,57 +127,36 @@ public class Teleportation {
 	public boolean attemptTeleportTablet(Position pos) {
 		if (player.inWild() && player.getWildernessLevel() > 20) {
 			player.getActionSender().sendMessage("You can't teleport above level 20 in the wilderness.");
-			return false; //keep these false
-		}
-		if (player.isTeleblocked()) {
-			player.getActionSender().sendMessage("A magical force prevents you from teleporting.");
 			return false;
 		}
-		if (player.cantTeleport()) {
-			player.getActionSender().sendMessage("You can't teleport from here.");
+		if(!canTeleport()) {
 			return false;
 		}
-		if (player.isHomeTeleporting()) {
-			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-			return false;
-		}
-		if (player.getInventory().playerHasItem(new Item(431))) {
-			player.getActionSender().sendMessage("You cannot teleport with Karamjan Rum, it will break.");
-			return false;
-		}
-		if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return false;
+		if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+			player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+			player.getInventory().removeItem(new Item(4033));
 		}
 		teleport(pos.getX(), pos.getY(), pos.getZ(), false);
 		return true;
 	}
 	
 	public void attemptHomeTeleport(Position pos) {
-        if(player.isHomeTeleporting()){
-        	return;
+		if(player.isAttacking() || !player.getInCombatTick().completed()){
+			player.getActionSender().sendMessage("You can't teleport while in combat!");
+			return;
 		}
-        if(player.isAttacking() || !player.getInCombatTick().completed()){
-        	player.getActionSender().sendMessage("You can't teleport while in combat!");
-        	return;
-        }
 		if (player.inWild() && player.getWildernessLevel() > 20) {
 			player.getActionSender().sendMessage("You can't teleport above level 20 in the wilderness.");
 			return;
 		}
-		if(player.inFightCaves()) {
-		    player.getActionSender().sendMessage("You can't teleport here.");
+		if(!canTeleport()) {
 		    return;
 		}
-        if (player.isTeleblocked() || player.cantTeleport()) {
-            player.getActionSender().sendMessage("You can't teleport out of here!");
-            return;
-        }
-        if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return;
-        }
-        teleportHome(pos.getX(), pos.getY(), pos.getZ());
+		if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+			player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+			player.getInventory().removeItem(new Item(4033));
+		}
+	    teleportHome(pos.getX(), pos.getY(), pos.getZ());
 	}
 	
 	public void teleportHome(final int x, final int y, final int height) {
@@ -242,18 +205,6 @@ public class Teleportation {
 	}
 	
 	public void teleport(final int x, final int y, final int height, final boolean modern) {
-        if (player.isTeleblocked() || player.cantTeleport()) {
-            player.getActionSender().sendMessage("You can't teleport out of here!");
-            return;
-        }
-		if (player.isHomeTeleporting()) {
-			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-			return;
-		}
-        if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return;
-        }
 		player.setStopPacket(true);
 		player.getAttributes().put("canTakeDamage", Boolean.FALSE);
 		CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
@@ -292,90 +243,82 @@ public class Teleportation {
     }
 
 	public void teleportObelisk(final int x, final int y, final int height, boolean graphic, final String message) {
-        if (player.isTeleblocked()) {
-            player.getActionSender().sendMessage("A magical force prevents you from teleporting.");
-            return;
-        }
-		if (player.cantTeleport()) {
-			player.getActionSender().sendMessage("You can't teleport from here.");
-			return;
-		}
-		if (player.isHomeTeleporting()) {
-			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-			return;
-		}
-        if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return;
-        }
-        if (graphic)
-            player.getUpdateFlags().sendHighGraphic(342);
-		player.getUpdateFlags().sendAnimation(1816);
-		player.setStopPacket(true);
-		player.getAttributes().put("canTakeDamage", Boolean.FALSE);
-		CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
-			int teleTimer = 6;
-			@Override
-			public void execute(CycleEventContainer container) {
-				teleTimer--;
-				if (!player.isDead()) {
-                    if (teleTimer == 3) {
-                        player.getUpdateFlags().sendAnimation(715);
-                        player.teleport(new Position(x, y, height));
-                        if (message != null)
-                            player.getActionSender().sendMessage(message);
-                    }
-                } else {
-                    teleTimer = 0;
-                }
-                if (teleTimer < 1) {
-                    container.stop();
-                }
+	    if (!canTeleport()) {
+		return;
+	    }
+	    if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+		player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+		player.getInventory().removeItem(new Item(4033));
+	    }
+	    if (graphic) {
+		player.getUpdateFlags().sendHighGraphic(342);
+	    }
+	    player.getUpdateFlags().sendAnimation(1816);
+	    player.setStopPacket(true);
+	    player.getAttributes().put("canTakeDamage", Boolean.FALSE);
+	    CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
+		int teleTimer = 6;
+
+		@Override
+		public void execute(CycleEventContainer container) {
+		    teleTimer--;
+		    if (!player.isDead()) {
+			if (teleTimer == 3) {
+			    player.getUpdateFlags().sendAnimation(715);
+			    player.teleport(new Position(x, y, height));
+			    if (message != null) {
+				player.getActionSender().sendMessage(message);
+			    }
 			}
-			@Override
-			public void stop() {
-				player.setStopPacket(false);
-				player.getAttributes().put("canTakeDamage", Boolean.TRUE);
-			}
-		}, 1);
+		    } else {
+			teleTimer = 0;
+		    }
+		    if (teleTimer < 1) {
+			container.stop();
+		    }
+		}
+
+		@Override
+		public void stop() {
+		    player.setStopPacket(false);
+		    player.getAttributes().put("canTakeDamage", Boolean.TRUE);
+		}
+	    }, 1);
 	}
 
 	public void teleportRunecraft(final int x, final int y, final int height) {
-        if (player.isTeleblocked() || player.cantTeleport()) {
-            player.getActionSender().sendMessage("You can't teleport out of here!");
-            return;
-        }
-		if (player.isHomeTeleporting()) {
-			player.getActionSender().sendMessage("You can't teleport while teleporting home.");
-			return;
+	    if (!canTeleport()) {
+		return;
+	    }
+	    if (player.getQuestStage(36) >= 14 && player.getInventory().playerHasItem(4033)) {
+		player.getActionSender().sendMessage("Your monkey flees your backpack in panic after teleporting!");
+		player.getInventory().removeItem(new Item(4033));
+	    }
+	    player.getUpdateFlags().sendHighGraphic(110);
+	    CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
+		int teleTimer = 6;
+
+		@Override
+		public void execute(CycleEventContainer container) {
+		    teleTimer--;
+		    if (!player.isDead()) {
+			if (teleTimer == 3) {
+			    player.teleport(new Position(x, y, height));
+			}
+		    } else {
+			teleTimer = 0;
+		    }
+		    if (teleTimer < 1) {
+			container.stop();
+		    }
 		}
-        if (player.getInJail()){
-			player.getActionSender().sendMessage("You cannot teleport while in jail.");
-			return;
-        }
-		player.getUpdateFlags().sendHighGraphic(110);
-		CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
-			int teleTimer = 6;
-			@Override
-			public void execute(CycleEventContainer container) {
-				teleTimer--;
-				if (!player.isDead()) {
-					if (teleTimer == 3) {
-						player.teleport(new Position(x, y, height));
-					}
-				} else {
-					teleTimer = 0;
-				}
-				if (teleTimer < 1) {
-					container.stop();
-				}
-			}
-			@Override
-			public void stop() {
-				player.setStopPacket(false);
-				player.getAttributes().put("canTakeDamage", Boolean.TRUE);
-			}
-		}, 1);
+
+		@Override
+		public void stop() {
+		    player.setStopPacket(false);
+		    player.getAttributes().put("canTakeDamage", Boolean.TRUE);
+		}
+	    }, 1);
 	}
 
 }
