@@ -88,14 +88,17 @@ public abstract class BasicAttack extends AttackScript {
 				animation = new Npc(player.transformNpc).getDefinition().getAttackAnim();
 			}
 		}
-		if(getAttacker() != null && getAttacker().isNpc() && getVictim() != null && getVictim().isPlayer()){
-            Player player = (Player) getVictim();
-            player.getCombatSounds().npcAttackSound(((Npc) getAttacker()));
-        }
 		if (animation != -1)
 			getAttacker().getUpdateFlags().sendAnimation(animation);
 		if (hits != null) {
 			for (HitDef hitDef : getHits()) {
+				if(hitDef.getAttackStyle() != null && hitDef.getAttackStyle().getAttackType() != AttackType.MAGIC)
+				{
+					if(getAttacker() != null && getAttacker().isNpc() && getVictim() != null && getVictim().isPlayer()){
+			            Player player = (Player) getVictim();
+			            player.getCombatSounds().npcAttackSound(((Npc) getAttacker()));
+			        }
+				}
 				if (getAttacker().isNpc() && ((Npc)getAttacker()).getDefinition().isPoisonous() && Misc.random(3) == 0) {
 					hitDef.addEffect(new PoisonEffect(6.0));
 				}
@@ -223,10 +226,12 @@ public abstract class BasicAttack extends AttackScript {
 				if(attackerFinal.isNpc() && ((Npc)attackerFinal).getNpcId() >= 1351 && ((Npc)attackerFinal).getNpcId() < 1357) {
 				    return 5;
 				}
+				if (attackerFinal.isNpc() && ((Npc)attackerFinal).getNpcId() == 1604)
+					return 6;
 				if (mode == AttackStyle.Mode.DRAGONFIRE)
 					return 1;
 				if (mode == AttackStyle.Mode.DRAGONFIRE_FAR)
-					return 3;
+					return 10;
 				if (attackType == AttackType.MAGIC || mode == AttackStyle.Mode.MELEE_FAR)
 					return 10;
 				return mode == AttackStyle.Mode.LONGRANGE ? 10 : 8;

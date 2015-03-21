@@ -15,13 +15,13 @@ import com.rs2.model.tick.CycleEventHandler;
 import com.rs2.util.Misc;
 
 public class Cat {
-	
+/*	
 	private final int[] catItems = {
 		1555,1556,1557,1558,1559,1560,
 		1561,1562,1563,1564,1565,1566,
 		1567,1568,1569,1570,1571,1572
 	};
-	
+*/	
 	private final int[] validFood = {
 		315,317,319,321,325,327,329,331,
 		333,335,337,338,339,341,345,347,
@@ -128,7 +128,7 @@ public class Cat {
 	}
 	
 	public boolean registerCat(int itemID) {
-		if(!hasCat() || cat != null)
+		if(catItemId <= 0 || cat != null)
 			return false;
 		if(itemID != catItemId)
 			return false;
@@ -347,6 +347,17 @@ public class Cat {
 			}
 		}
 	}
+	
+	public void resetCat() {
+		cat = null;
+		catActive = false;
+		ResetHunger();
+		catItemId = 0;
+		growthStage = 0;
+		growthTime = 0;
+		attentionTime = 0;
+		ratsCaught = 0;
+	}
 
 	public void ResetHunger(){
 		hungerTime = 0;
@@ -390,7 +401,20 @@ public class Cat {
 	}
 	
 	public boolean hasCat(){
-		return catItemId != 0;
+		if(catItemId > 0){
+			if(cat != null && cat.getPlayerOwner() != null && cat.getPlayerOwner() == player)
+			{
+				return true;
+			}else{
+				if(player.getInventory().ownsItem(catItemId))
+				{
+					return true;
+				}else{
+					catItemId = 0;
+				}
+			}
+		}
+		return false;
 	}
 	
 	public void setCatItem(int itemId)
@@ -468,6 +492,6 @@ public class Cat {
 	private boolean hungry = false;
 	private boolean hungerMessage = false, hungerMessage2 = false;
 	private int attentionTime = 0;
-	private final int maxAttentionTime = 20;
+	//private final int maxAttentionTime = 20;
 	private int ratsCaught = 0;
 }

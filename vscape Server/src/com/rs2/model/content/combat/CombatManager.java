@@ -17,22 +17,20 @@ import com.rs2.model.content.minigames.warriorsguild.WarriorsGuild;
 import com.rs2.model.content.minigames.castlewars.Castlewars;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
 import com.rs2.model.content.minigames.pestcontrol.PestControl;
-import com.rs2.model.content.quests.AnimalMagnetism;
-import com.rs2.model.content.quests.DemonSlayer;
-import com.rs2.model.content.quests.DragonSlayer;
-import com.rs2.model.content.quests.ErnestTheChicken;
-import com.rs2.model.content.quests.FamilyCrest;
-import com.rs2.model.content.quests.GhostsAhoy;
-import com.rs2.model.content.quests.HeroesQuest;
-import com.rs2.model.content.quests.HorrorFromTheDeep;
-import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
-import com.rs2.model.content.quests.PriestInPeril;
+import com.rs2.model.content.quests.impl.AnimalMagnetism;
+import com.rs2.model.content.quests.impl.DemonSlayer;
+import com.rs2.model.content.quests.impl.DragonSlayer;
+import com.rs2.model.content.quests.impl.ErnestTheChicken;
+import com.rs2.model.content.quests.impl.FamilyCrest;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.HeroesQuest;
+import com.rs2.model.content.quests.impl.HorrorFromTheDeep;
+import com.rs2.model.content.quests.impl.PriestInPeril;
+
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.RecruitmentDrive;
-import com.rs2.model.content.quests.ShieldOfArrav;
-import com.rs2.model.content.quests.TheGrandTree;
-import com.rs2.model.content.quests.TreeGnomeVillage;
-import com.rs2.model.content.quests.VampireSlayer;
+import com.rs2.model.content.quests.impl.Quest;
+import com.rs2.model.content.quests.impl.ShieldOfArrav;
+import com.rs2.model.content.quests.impl.VampireSlayer;
 import com.rs2.model.content.randomevents.TalkToEvent;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.magic.Teleportation;
@@ -51,8 +49,6 @@ import com.rs2.model.tick.CycleEventHandler;
 import com.rs2.model.tick.Tick;
 import com.rs2.util.Misc;
 import com.rs2.util.PlayerSave;
-import com.rs2.util.clip.ClippedPathFinder;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -87,9 +83,33 @@ public class CombatManager extends Tick {
 	}
 
 	public static void attack(Entity attacker, Entity victim) {
-        if((victim.isNpc() && !((Npc)victim).isVisible()) || victim.isDead()) {
+		if(Constants.DDOS_PROTECT_MODE) {
+			if(attacker.isPlayer())
+			{
+        		((Player) attacker).getActionSender().sendMessage("@red@You can't attack during DDOS PROTECTION.", true);
+	        	CombatManager.resetCombat(attacker);
+				return;
+			}
+	        if(attacker.isNpc() && victim.isPlayer()) {
+	        	CombatManager.resetCombat(attacker);
+				return;
+	        }
+		}
+		if(attacker.isNpc() && ((Npc)attacker).isDontAttack()) {
 			return;
-	}
+		}
+        if(victim.isNpc() && (!((Npc)victim).isVisible() || victim.isDead())) {
+			return;
+        }
+	    if (victim.isNpc() && ((Npc) victim).walkingBackToSpawn) {
+		CombatManager.resetCombat(victim);
+	    }
+	    if (attacker.failedCriticalRequirement()) {
+		attacker.setFailedCriticalRequirement(false);
+		CombatManager.resetCombat(attacker);
+		attacker.getMovementHandler().reset();
+		return;
+	    }
         if (victim.getMaxHp() < 1 || (victim.isNpc() && (((Npc) victim).getNpcId() == 411 || TalkToEvent.isTalkToNpc(((Npc) victim).getNpcId()) || ((Npc) victim).getNpcId() == 3782 || ((Npc) victim).getNpcId() == AnimalMagnetism.UNDEAD_TREE || PestControl.isShieldedPortal((Npc)victim)) ) ) {
         	if (attacker.isPlayer()) {
         		((Player) attacker).getActionSender().sendMessage("You cannot attack this npc.");
@@ -97,41 +117,52 @@ public class CombatManager extends Tick {
         	CombatManager.resetCombat(attacker);
         	return;
         }
-	if(attacker.isPlayer() && ((Player) attacker).getPets().getPet() == victim) {
-            ((Player) attacker).getActionSender().sendMessage("You cannot attack your own pet!");
-            CombatManager.resetCombat(attacker);
-            return;
-	}
-	if(attacker.isPlayer() && (((Player) attacker).transformNpc == 1707 || ((Player) attacker).transformNpc == 1708)) {
-            ((Player) attacker).getDialogue().sendPlayerChat("I can't see to attack!", Dialogues.DISTRESSED);
-            CombatManager.resetCombat(attacker);
-            return;
-	}
-	if(attacker.isPlayer() && ((Player) attacker).getMMVars().isMonkey()) {
-            ((Player)attacker).getActionSender().sendMessage("You cannot attack as a monkey!");
-	    CombatManager.resetCombat(attacker);
-            return;
-	}
-	if(attacker.isPlayer() && !(((Player) attacker).getFreakyForester().isActive()) && victim.isNpc() && ((Npc)victim).getDefinition().getName().toLowerCase().equals("pheasant")) {
-	    ((Player)attacker).getDialogue().sendPlayerChat("I shouldn't attack these poor birds like that.", Dialogues.SAD);
-	    return;
-	}
-	if(attacker.isPlayer() && ( ((Player)attacker).getEquipment().getItemContainer().get(Constants.WEAPON) == null || ((Player)attacker).getEquipment().getItemContainer().get(Constants.WEAPON).getId() != 2402)
-	   && victim.isNpc() && ((Npc)victim).getNpcId() == 879) {
-            ((Player) attacker).getActionSender().sendMessage("You need to equip Silverlight to fight Delrith!");
-            CombatManager.resetCombat(attacker);
-            return;
-	}
-	if(attacker.isPlayer() && victim.isNpc() && ((Npc)victim).getNpcId() == 742 && ((Player)attacker).getQuestStage(15) != 7) {
-            ((Player) attacker).getActionSender().sendMessage("I better not try this.");
-            CombatManager.resetCombat(attacker);
-            return;
-	}
+		if(attacker.isPlayer() && ((Player) attacker).getPets().getPet() == victim) {
+	            ((Player) attacker).getActionSender().sendMessage("You cannot attack your own pet!");
+	            CombatManager.resetCombat(attacker);
+	            return;
+		}
+		if(attacker.isPlayer() && (((Player) attacker).transformNpc == 1707 || ((Player) attacker).transformNpc == 1708)) {
+	            ((Player) attacker).getDialogue().sendPlayerChat("I can't see to attack!", Dialogues.DISTRESSED);
+	            CombatManager.resetCombat(attacker);
+	            return;
+		}
+		if(attacker.isPlayer() && ((Player) attacker).getMMVars().isMonkey()) {
+	            ((Player)attacker).getActionSender().sendMessage("You cannot attack as a monkey!");
+	            CombatManager.resetCombat(attacker);
+	            return;
+		}
+		if(attacker.isPlayer() && victim.isNpc() && ((Npc)victim).getDefinition().getName().toLowerCase().equals("pheasant")){
+			Player player = ((Player) attacker);
+			if(player.getRandomHandler().getCurrentEvent() == null || (player.getRandomHandler().getCurrentEvent() == player.getRandomHandler().getFreakyForester() && player.getRandomHandler().getFreakyForester().complete))
+			{
+				player.getDialogue().sendPlayerChat("I shouldn't attack these poor birds like that.", Dialogues.SAD);
+			    return;
+			}
+		}
+		if(attacker.isPlayer() && ( ((Player)attacker).getEquipment().getItemContainer().get(Constants.WEAPON) == null || ((Player)attacker).getEquipment().getItemContainer().get(Constants.WEAPON).getId() != 2402)
+		   && victim.isNpc() && ((Npc)victim).getNpcId() == 879) {
+	            ((Player) attacker).getActionSender().sendMessage("You need to equip Silverlight to fight Delrith!");
+	            CombatManager.resetCombat(attacker);
+	            return;
+		}
+		if(attacker.isPlayer() && victim.isNpc() && ((Npc)victim).getNpcId() == 742 && ((Player)attacker).getQuestStage(15) != 7) {
+	            ((Player) attacker).getActionSender().sendMessage("I better not try this.");
+	            CombatManager.resetCombat(attacker);
+	            return;
+		}
 		if (attacker.isPlayer() && attacker.inDuelArena()) {
 			if (!((Player) attacker).getDuelMainData().canStartDuel()) {
 	        	CombatManager.resetCombat(attacker);
 				return;
 			}
+		}
+		if(attacker.isPlayer() && victim.isNpc()) {
+		    Npc npc = (Npc)victim;
+		    Player player = (Player)attacker;
+		    if(npc.getNpcId() >= 6026 && npc.getNpcId() < 6046 && player.getEquipment().getId(Constants.WEAPON) != PriestInPeril.WOLFBANE) {
+			npc.sendTransform(npc.getNpcId() - 20, 500);
+		    }
 		}
         List<AttackUsableResponse> attacks = new LinkedList<AttackUsableResponse>();
         int distance = Misc.getDistance(attacker.getPosition(), victim.getPosition());
@@ -218,11 +249,11 @@ public class CombatManager extends Tick {
 			Player player = (Player) died;
 			player.setStopPacket(true);
 		}
-		if(died.isNpc() && killer != null && killer.isPlayer() && ((Npc)died).getNpcId() == 757 && VampireSlayer.handleDeath((Player) killer, (Npc)died)) {
+		if(died.isNpc() && killer != null && killer.isPlayer() && ((Npc)died).getNpcId() == 757 && VampireSlayer.handleCountDeath((Player) killer, (Npc)died)) {
 		    died.setDead(false);
 		    return;
 		}
-		if(died.isNpc() && killer != null && killer.isPlayer() && ((Npc)died).getNpcId() == FamilyCrest.CHRONOZON && FamilyCrest.handleDeath((Player) killer, (Npc)died)) {
+		if(died.isNpc() && killer != null && killer.isPlayer() && ((Npc)died).getNpcId() == FamilyCrest.CHRONOZON && FamilyCrest.handleChronozonDeath((Player) killer, (Npc)died)) {
 		    died.setDead(false);
 		    return;
 		}
@@ -423,19 +454,17 @@ public class CombatManager extends Tick {
 	    		final Npc npc = (Npc) died;
 			ClueScroll.handleAttackerDeath((Player)killer, npc);
 			((Player) killer).getSlayer().handleNpcDeath(npc);
-			((Player) killer).getBarrows().handleDeath(((Player)killer), npc);
+			((Player) killer).getBarrows().handleDeath(npc);
 			WarriorsGuild.dropDefender((Player) killer, npc);
 			ShieldOfArrav.handleDrops((Player) killer, npc);
 			DragonSlayer.handleDrops((Player) killer, npc);
-			PriestInPeril.handleDeath((Player) killer, npc);
 			PriestInPeril.handleDrops((Player) killer, npc);
 			HeroesQuest.handleGripDeath((Player)killer, npc);
 			FamilyCrest.handleDrops((Player) killer, npc);
-			TheGrandTree.handleDeath((Player) killer, npc);
-			TreeGnomeVillage.handleDeath((Player) killer, npc);
-			RecruitmentDrive.handleDeath((Player) killer, npc);
-			MonkeyMadness.handleDeath((Player) killer, npc);
-			((Player) killer).getFreakyForester().handleDrops(npc);
+			((Player) killer).getRandomHandler().getFreakyForester().handleDrops(npc);
+			for(Quest q : QuestHandler.getQuests()) {
+				q.handleDeath((Player) killer, npc);
+			}
 			if(((Player) killer).getSpawnedNpc() != null) {
 			    ((Player) killer).setSpawnedNpc(null);
 			}
@@ -443,14 +472,16 @@ public class CombatManager extends Tick {
 		}
 	    if (died != null && died.isNpc()) {
     		final Npc npc = (Npc) died;
-		if ( npc.getNpcId() == 1158 && firstTime ) { // kq
-		    Npc newQueen = new Npc(1160);
-		    newQueen.setSpawnPosition(died.getPosition().clone());
-		    newQueen.setPosition(died.getPosition().clone());
-		    newQueen.setCombatDelay(10);
-		    newQueen.getMovementPaused().setWaitDuration(10);
-		    World.register(newQueen);
-		    newQueen.getUpdateFlags().sendForceMessage("Bzzzzz");
+		if (npc.getNpcId() == 1158 && firstTime ) { // kq
+		    if (World.npcAmount(1160) == 0) {
+			Npc newQueen = new Npc(1160);
+			newQueen.setSpawnPosition(died.getPosition().clone());
+			newQueen.setPosition(died.getPosition().clone());
+			newQueen.setCombatDelay(10);
+			newQueen.getMovementPaused().setWaitDuration(10);
+			World.register(newQueen);
+			newQueen.getUpdateFlags().sendForceMessage("Bzzzzz");
+		    }
 		}
 		else if( npc.getNpcId() == 1160 ) {
 		    npc.setDead(true);
@@ -458,7 +489,7 @@ public class CombatManager extends Tick {
 		    World.unregister(npc);
 		    return;
 		}
-		else if(npc.getNpcId() >= 6026 && npc.getNpcId() < 6046) {
+		else if(npc.getNpcId() >= 6026 && npc.getNpcId() <= 6045) {
 		    npc.setTransformUpdate(true);
 		}
 		else if(npc.getNpcId() == 742 && killer.isPlayer()) {
@@ -472,7 +503,7 @@ public class CombatManager extends Tick {
 		}
 		else if(npc.getNpcId() == GhostsAhoy.GIANT_LOBSTER) {
 		    if(killer != null && killer.isPlayer()) {
-			((Player)killer).setLobsterSpawnedAndDead(true);
+			((Player)killer).getQuestVars().setLobsterSpawnedAndDead(true);
 		    }
 		}
 		else if ( npc.getNpcId() == 879 && firstTime ) { // delrith
@@ -541,6 +572,8 @@ public class CombatManager extends Tick {
 			int respawnTimer = npc.getRespawnTimer();
 			if(npc.getNpcId() == 1158)
 			    respawnTimer = 300;
+			else if(npc.getNpcId() == 224)
+			    respawnTimer = 30;
 			else if(npc.getNpcId() == 2881 || npc.getNpcId() == 2882 || npc.getNpcId() == 2883)
 			    respawnTimer = 60;
 			else if(npc.getNpcId() == 916) // joe
@@ -658,10 +691,13 @@ public class CombatManager extends Tick {
 		}
 		if (died.isPlayer()) {
 		    Player player = (Player) died;
-		    player.teleport(player.isGazeOfSaradomin() ? Teleportation.WHITE_KNIGHTS_CASTLE : Teleportation.HOME);
+		    player.teleport(player.getQuestVars().isGazeOfSaradomin() ? Teleportation.WHITE_KNIGHTS_CASTLE : Teleportation.HOME);
 		    player.getActionSender().sendMessage("Oh dear, you are dead!");
-			if (player.getMultiCannon() != null && player.getMultiCannon().hasCannon()) {
-				player.getMultiCannon().pickupCannon();
+			if (player.getMultiCannon().hasCannon()) {
+				player.getMultiCannon().pickupCannon(false);
+			}
+			if(player.getInJail()){
+				player.setInJail(false);
 			}
 		    PlayerSave.save(player);
 		    player.getActionSender().sendQuickSong(75, 16);
@@ -822,7 +858,7 @@ public class CombatManager extends Tick {
         //if (victim.isNpc())
         //    return victim.getBonus(attackStyle.getBonus().toInteger() + AttackStyle.Bonus.values().length);
 		double effectiveDefence = getEffectiveDefence(victim, attackStyle);
-		if(victim.isPlayer() && attackStyle.getAttackType() != AttackType.MAGIC) {
+		if(victim.isPlayer() && attackStyle.getAttackType() != AttackType.MAGIC && attackStyle.getMode() != AttackStyle.Mode.MAGIC) {
 		   effectiveDefence += victim.getBonus(attackStyle.getBonus().toInteger() + AttackStyle.Bonus.values().length); 
 		}
 		int styleBonusDefence = 0;
@@ -832,13 +868,18 @@ public class CombatManager extends Tick {
 				int level = pVictim.getSkill().getLevel()[Skill.MAGIC];
 				effectiveDefence = (int) (Math.floor(level * 0.125) + Math.floor(effectiveDefence * 0.875));
 				styleBonusDefence = 19;
+			} else if (attackStyle.getAttackType() == AttackType.MELEE && attackStyle.getMode() == AttackStyle.Mode.MAGIC){
+				int magicLevel = pVictim.getSkill().getLevel()[Skill.MAGIC];
+				int defenseLevel = pVictim.getSkill().getLevel()[Skill.DEFENCE];
+				effectiveDefence = (int) (Math.floor(magicLevel * 0.0875) + Math.floor(defenseLevel * 0.0375) + Math.floor(effectiveDefence * 0.875));
+				styleBonusDefence = 64;
 			} else {
 				AttackStyle defenceStyle = pVictim.getEquippedWeapon().getWeaponInterface().getAttackStyles()[pVictim.getFightMode()];
-				if (defenceStyle.getMode() == AttackStyle.Mode.DEFENSIVE || defenceStyle.getMode() == AttackStyle.Mode.LONGRANGE)
-					styleBonusDefence += 3;
-				else if (defenceStyle.getMode() == AttackStyle.Mode.CONTROLLED)
-					styleBonusDefence += 1;
-			}
+					if (defenceStyle.getMode() == AttackStyle.Mode.DEFENSIVE || defenceStyle.getMode() == AttackStyle.Mode.LONGRANGE)
+						styleBonusDefence += 3;
+					else if (defenceStyle.getMode() == AttackStyle.Mode.CONTROLLED)
+						styleBonusDefence += 1;
+				}
 		}
 		effectiveDefence *= (1 + (styleBonusDefence) / 64);
 		if (hitDef.getSpecialEffect() == 11) { //verac effect
@@ -876,6 +917,9 @@ public class CombatManager extends Tick {
 	 * Resets anything needed after the end of combat.
 	 */
 	public static void resetCombat(Entity entity) {
+		if(entity == null) {
+		    return;
+		}
 		if (entity.isPlayer()) {
 			((Player) entity).setCastedSpell(null);
 		}
@@ -885,9 +929,7 @@ public class CombatManager extends Tick {
 		entity.getUpdateFlags().faceEntity(-1);
 		if(entity.isNpc() && ((Npc)entity).getNpcId() == 1460) {
 		    ((Npc)entity).setFollowingEntity(null);
-		    ClippedPathFinder.getPathFinder().findRoute(entity, ((Npc)entity).getSpawnPosition().getX(), ((Npc)entity).getSpawnPosition().getY(), true, 0, 0);
-		    //((Npc)entity).walkTo(((Npc)entity).getSpawnPosition(), true);
-		    
+		    ((Npc)entity).walkTo(((Npc)entity).getSpawnPosition(), true);
 		}
 		Following.resetFollow(entity);
 	}

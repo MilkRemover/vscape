@@ -19,17 +19,31 @@ public class TrapDoor {
 		CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
 			@Override
 			public void execute(CycleEventContainer container) {
-				if (ObjectHandler.getInstance().getObject(originalId, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ()) != null) {
-					ObjectHandler.getInstance().removeObject(originalId, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
 					if (originalId == 883) {
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
 						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY() + 1, def.getPosition().getZ(), type);
+						new GameObject(881, def.getPosition().getX(), def.getPosition().getY() + 1, def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+					} else if (originalId == 2545) {
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY() + 1, def.getPosition().getZ(), type);
+						new GameObject(2543, def.getPosition().getX(), def.getPosition().getY() + 1, def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+					} else {
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
+						//ObjectHandler.getInstance().removeObject(originalId, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
 					}
-				} else {
-					new GameObject(newId, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), face, type, originalId, 999999);
+					
 					if (originalId == 881) {
-						new GameObject(883, def.getPosition().getX(), def.getPosition().getY() - 1, def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999);
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
+						new GameObject(883, def.getPosition().getX(), def.getPosition().getY() - 1, def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+						new GameObject(882, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+					} else if (originalId == 2543) {
+						ObjectHandler.getInstance().removeObject(def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), type);
+						new GameObject(2545, def.getPosition().getX(), def.getPosition().getY() - 1, def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+						new GameObject(2544, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), face, type, Constants.EMPTY_OBJECT, 999999, true);
+					} else {
+					    if(originalId != 883 && originalId != 2545)
+						new GameObject(newId, def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), face, type, originalId, 999999, true);
 					}
-				}
 				container.stop();
 			}
 			@Override

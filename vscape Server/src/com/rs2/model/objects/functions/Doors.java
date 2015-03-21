@@ -7,6 +7,8 @@ import com.rs2.Constants;
 import com.rs2.cache.object.CacheObject;
 import com.rs2.cache.object.GameObjectData;
 import com.rs2.cache.object.ObjectLoader;
+import com.rs2.model.Position;
+import com.rs2.model.content.dialogue.Dialogues;
 import com.rs2.model.content.skills.SkillHandler;
 import com.rs2.model.objects.GameObject;
 import com.rs2.model.players.ObjectHandler;
@@ -60,10 +62,17 @@ public class Doors {
 			return false;
 		}
 		/* Special Doors */
-		if (id == 3944 || id == 3945 || id == 883 || id == 1805 || id == 2881 || id == 2882 || id == 2883 || id == 2623 || id == 2112 || id == 1804 || id == 2266 || id == 2406 || id == 2407 || id == 2631 || id == 2623 || id == 8958 || id == 8959 || id == 8960 || id == 1589 || id == 1590 || id == 190 || id == 4577 || id == 10721) {
+		if (id == 10527 || id == 10529 || id == 3944 || id == 3945 || id == 2559 || id == 2537 || id == 883 || id == 1805 || id == 2881 || id == 2882 || id == 2883 || id == 2623 || id == 2112 || id == 1804 || id == 2266 || id == 2406 || id == 2407 || id == 2631 || id == 2623 || id == 8958 || id == 8959 || id == 8960 || id == 1589 || id == 1590 || id == 190 || id == 4577 || id == 10721) {
+			return false;
+		}
+		if(id == 7256) { //Rogues den course entrance door
 			return false;
 		}
 		if(id == 2025 && x == 2611 && y == 3394)//fishing guild
+		{
+			return false;
+		}
+		if((id == 2307 || id == 2308) && x >= 2997 && x <= 2998 && y == 3931)
 		{
 			return false;
 		}
@@ -72,6 +81,10 @@ public class Doors {
 			return false;
 		}
 		if(id == 4423 || id == 4424 || id == 4427 || id == 4428 || id == 4465 || id == 4466 || id == 4467 || id == 4468)
+		{
+			return false;
+		}
+		if(id == 9300)
 		{
 			return false;
 		}
@@ -256,6 +269,47 @@ public class Doors {
 			public void stop() {
 			}
 		}, 2);
+	}
+	
+	public static void passThroughDialogueDoor(final Player player, final int object, final int obX, final int obY, final int travelTo, final Position toBe, final boolean isNS) {
+		final int pX = player.getPosition().getX(), pY = player.getPosition().getY();
+		player.setStopPacket(true);
+		if (player.getPosition().equals(toBe)) {
+			player.getActionSender().walkThroughDoor(object, obX, obY, player.getPosition().getZ());
+			if(isNS) {
+				player.getActionSender().walkTo(pX == obX ? 0 : pX < obX ? 1 : -1, travelTo, true);
+			} else {
+				player.getActionSender().walkTo(travelTo, pY == obY ? 0 : pY < obX ? 1 : -1, true);
+			}
+			player.setStopPacket(false);
+		} else {
+			CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
+				int count = 0;
+				@Override
+				public void execute(CycleEventContainer b) {
+					int pX = player.getPosition().getX(), pY = player.getPosition().getY();
+					count++;
+					if (player.getPosition().equals(toBe)) {
+						player.getActionSender().walkThroughDoor(object, obX, obY, player.getPosition().getZ());
+						if (isNS) {
+							player.getActionSender().walkTo(pX == obX ? 0 : pX < obX ? 1 : -1, travelTo, true);
+						} else {
+							player.getActionSender().walkTo(travelTo, pY == obY ? 0 : pY < obX ? 1 : -1, true);
+						}
+					} else {
+						player.walkTo(toBe, true);
+					}
+					if (count >= 3) {
+						b.stop();
+					}
+				}
+
+				@Override
+				public void stop() {
+					player.setStopPacket(false);
+				}
+			}, 1);
+		}
 	}
 
 	private boolean alreadyOpen(int id) {

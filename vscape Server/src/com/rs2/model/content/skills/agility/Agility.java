@@ -2,7 +2,7 @@ package com.rs2.model.content.skills.agility;
 
 import com.rs2.Constants;
 import com.rs2.model.Position;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll.GreeGreeData;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll.GreeGreeData;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.players.Player;
 import com.rs2.model.tick.CycleEvent;
@@ -316,7 +316,7 @@ public class Agility {
 				anim = 756; //north
 				break;
 		}
-		crossObstacle(player, x, y, anim, 7, xp);
+		crossObstacle(player, x, y, anim, time, xp);
 	}
 	
 	public static void crossMonkeyBars(Player player, int x, int y, int z, int anim, int time, int level, double xp) {

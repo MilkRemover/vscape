@@ -6,6 +6,7 @@ import com.rs2.model.players.container.inventory.Inventory;
 import com.rs2.model.players.item.Item;
 import com.rs2.util.LogHandler;
 import com.rs2.util.NameUtil;
+import com.rs2.util.PlayerSave;
 
 public class TradeManager {
 
@@ -22,11 +23,11 @@ public class TradeManager {
 
 	public static void handleTradeRequest(Player player, Player otherPlayer) {
 		if (!Constants.ADMINS_CAN_INTERACT && (player.getStaffRights() >= 2 || otherPlayer.getStaffRights() >= 2)) {
-			player.getActionSender().sendMessage("You are not allowed to trade this player.");
+			player.getActionSender().sendMessage("You are not allowed to trade this player.", true);
 			return;
 	    }
 		if (otherPlayer.getLastPersonTraded() != player) {
-			player.getActionSender().sendMessage("Sending trade offer...");
+			player.getActionSender().sendMessage("Sending trade offer...", true);
 			otherPlayer.getActionSender().sendMessage("" + NameUtil.uppercaseFirstLetter(player.getUsername()) + ":tradereq:");
 			player.setTradeStage(TradeStage.SEND_REQUEST);
 			player.setLastPersonTraded(otherPlayer);
@@ -58,7 +59,7 @@ public class TradeManager {
 			return;
 		}
 		Player otherPlayer = (Player) player.getTradingEntity();
-		otherPlayer.getActionSender().sendMessage("Other player has declined the trade.");
+		otherPlayer.getActionSender().sendMessage("Other player has declined the trade.", true);
 		player.getActionSender().removeInterfaces();
         otherPlayer.getActionSender().removeInterfaces();
 		player.setTradeStage(TradeStage.WAITING);
@@ -99,7 +100,7 @@ public class TradeManager {
 			return;
 		}
 		if (new Item(tradeItem).getDefinition().isUntradable() || tradeItem == 8851) {
-			player.getActionSender().sendMessage("You cannot trade that item.");
+			player.getActionSender().sendMessage("You cannot trade that item.", true);
 			return;
 		}
 		if (invAmount > amount) {
@@ -225,12 +226,14 @@ public class TradeManager {
 			}
 			player.setTradeStage(TradeStage.WAITING);
 			otherPlayer.setTradeStage(TradeStage.WAITING);
-			player.getActionSender().sendMessage("You accept the trade.");
-			otherPlayer.getActionSender().sendMessage("You accept the trade.");
+			player.getActionSender().sendMessage("You accept the trade.", true);
+			otherPlayer.getActionSender().sendMessage("You accept the trade.", true);
 			player.getActionSender().removeInterfaces();
 			otherPlayer.getActionSender().removeInterfaces();
 			player.setTradingEntity(null);
 	        otherPlayer.setTradingEntity(null);
+	        PlayerSave.save(player);
+	        PlayerSave.save(otherPlayer);
 		}
 	}
 

@@ -7,10 +7,10 @@ import com.rs2.model.content.combat.util.Degradeables;
 import com.rs2.model.content.combat.util.Degrading;
 import com.rs2.model.content.minigames.castlewars.impl.CatapultInterface;
 import com.rs2.model.content.minigames.pestcontrol.PestControlRewardHandler;
-import com.rs2.model.content.quests.DwarfCannon;
-import com.rs2.model.content.quests.FamilyCrest;
+import com.rs2.model.content.quests.impl.DwarfCannon;
+import com.rs2.model.content.quests.impl.FamilyCrest;
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.RecruitmentDrive;
+import com.rs2.model.content.quests.impl.RecruitmentDrive;
 import com.rs2.model.content.randomevents.TalkToEvent;
 import com.rs2.model.content.skills.SkillsX;
 import com.rs2.model.content.skills.Crafting.DramenBranch;
@@ -55,13 +55,12 @@ public class ButtonPacketHandler implements PacketHandler {
         interfaceId |= (data[0] & 0xff) << 8;
         interfaceId |= (data[1] & 0xff);
         RSInterface inter = RSInterface.forId(interfaceId);
-    /*    int buttonId = Misc.hexToInt(data);
-        if (!player.hasInterfaceOpen(inter) && !player.getEmotes().isEmote(buttonId)) {
+        int buttonId = Misc.hexToInt(data);
+        if (!player.hasInterfaceOpen(inter)) {
             //player.getActionSender().removeInterfaces();
-            return;
-        }*/
-        //reenabled because im curious.
-		handleButton(player, Misc.hexToInt(data));
+           // return;
+        }
+		handleButton(player, buttonId);
 	}
 
 	private void handleButton(Player player, int buttonId) {
@@ -236,7 +235,11 @@ public class ButtonPacketHandler implements PacketHandler {
 				}
 				return;
 			case 89061 :	
+			case 93209 :
+			case 93217 :
 			case 93225 :
+			case 93233 :
+			case 93240 :
 			case 93202 :
 			case 94051 :
 				if(player.shouldAutoRetaliate())
@@ -359,6 +362,11 @@ public class ButtonPacketHandler implements PacketHandler {
 					player.setWithdrawAsNote(true);
 				}
 				return;
+			case 77115: //piety
+			case 77113: //chivalry
+			    player.getActionSender().sendMessage("This prayer is disabled.");
+			    player.getActionSender().sendConfig(buttonId == 77113 ? 706 : 707, 0);
+			    return;
 			/*case 21011 :
 				player.setWithdrawAsNote(false);
 				return;*/
@@ -373,12 +381,18 @@ public class ButtonPacketHandler implements PacketHandler {
 				}
 				//player.setBankOptions(BankOptions.INSERT_ITEM);
 				return;
+			case 97184 :
+				if(player.getClanChat() != null)
+				{
+					player.getClanChat().leaveChat(player, false);
+				}
+				return;
 		}
 		if (QuestHandler.handleQuestButtons(player, buttonId))
 		{
 			return;
 		}
-		if(player.getMusicPlayer().handleButton(buttonId))
+		if(player.getMusicManager().handleButton(buttonId))
 			return;
 		if (MagicSkill.clickingToAutoCast(player, buttonId))
 			return;
@@ -389,7 +403,7 @@ public class ButtonPacketHandler implements PacketHandler {
 		if (player.getPrayer().setPrayers(buttonId)) {
 			return;
 		}
-		if (player.getPillory().handleButton(buttonId)) {
+		if (player.getRandomHandler().getPillory().handleButton(buttonId)) {
 			return;
 		}
 		/**
@@ -471,25 +485,34 @@ public class ButtonPacketHandler implements PacketHandler {
 					return;
 				}
                 if (player.inDuelArena()) {
-                    player.getActionSender().sendMessage("You can't logout during a duel fight!");
+                    player.getActionSender().sendMessage("You can't logout during a duel!");
                     return;
                 }
                 if (player.inPestControlGameArea()) {
-                    player.getActionSender().sendMessage("You can't logout while in Pest control");
+                    player.getActionSender().sendMessage("You can't logout while in Pest control!");
                     return;
                 }
                 if (player.inCwGame() || player.inCwLobby()) {
                     player.getActionSender().sendMessage("You can't logout while in Castle wars!");
                     return;
                 }
-		if(player.inMageTrainingArena())
+              /*  if (player.inRandomEvent()) {
+                    player.getActionSender().sendMessage("You can't logout in a random event area!");
+                    return;
+                }*/
+				if(player.isInCutscene()) {
+				    player.getActionSender().sendMessage("You can't logout during a cutscene!");
+				    return;
+				}
+				if(player.inMageTrainingArena())
                 {
-                    player.getActionSender().sendMessage("You can't logout while in a Mage Training room!");
+                    player.getActionSender().sendMessage("You can't logout while in the Mage Training Arena!");
                     return;
                 }
 				player.getActionSender().sendLogout();
 				return;
 		}
+		
 		if (TalkToEvent.isGenieLampButton(player, buttonId)) {
 			return;
 		}
@@ -502,8 +525,11 @@ public class ButtonPacketHandler implements PacketHandler {
 		if (player.getSkillGuide().skillGuidesButton(buttonId)) {
 			return;
 		}
-		if (player.getRandomInterfaceClick().handleButtonClicking(buttonId)) {
-			return;
+		if (player.getRandomHandler().getCurrentEvent() != null) {
+			if(player.getRandomHandler().getCurrentEvent().handleButtons(buttonId))
+			{
+				return;
+			}
 		}
 		if (Sextant.handleSextantButtons(player, buttonId)) {
 			return;
@@ -551,7 +577,10 @@ public class ButtonPacketHandler implements PacketHandler {
 		if (DwarfCannon.buttonHandling(player, buttonId)) {
 			return;
 		}
-		if(RecruitmentDrive.buttonHandling(player, buttonId)) {
+		if (RecruitmentDrive.buttonHandling(player, buttonId)) {
+			return;
+		}
+		if (player.getDice().buttonHandling(player, buttonId)) {
 			return;
 		}
 		if (Spinning.spin(player, buttonId, 0)) {

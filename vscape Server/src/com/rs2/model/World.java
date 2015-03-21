@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import com.rs2.Constants;
 import com.rs2.Server;
 import com.rs2.cache.region.RegionManager;
@@ -40,7 +43,7 @@ public class World {
 	/** All registered NPCs. */
 	private static Npc[] npcs = new Npc[Constants.MAX_NPCS];
 	
-	public static ArrayList<GameObject> cannons = new ArrayList<GameObject>();
+	public static HashMap<Long, GameObject> cannons = new HashMap<Long, GameObject>();
 
 	private static TickManager tickManager = new TickManager();
 
@@ -254,9 +257,10 @@ public class World {
 		for (int i = 1; i < npcs.length; i++) {
 			if (npcs[i] == null) {
 				npcs[i] = npc;
+				NpcDefinition definition = World.getDefinitions()[npc.getNpcId()];
 				npc.setIndex(i);
 				npc.setFaceIndex(i);
-				npc.setSize(World.getDefinitions()[npc.getNpcId()].getSize());
+				npc.setSize(definition.getSize());
 				for (int id : Npc.npcsTransformOnAggression) {
 					if (id == npc.getNpcId()) {
 						if (npc.getNpcId() >= 1024 && npc.getNpcId() <= 1029) {
@@ -267,39 +271,24 @@ public class World {
 						break;
 					}
 				}
-				for (int id : Npc.npcsDontWalk) {
-					if (id == npc.getNpcId()) {
-						npc.setDontWalk(true);
-						break;
-					}
-				}
-				for (int id : Npc.npcsDontFollow) {
-					if (id == npc.getNpcId()) {
-						npc.setDontFollow(true);
-						break;
-					}
-				}
-				for (int id : Npc.npcsDontAttack) {
-					if (id == npc.getNpcId()) {
-						npc.setDontAttack(true);
-						break;
-					}
-				}
+				npc.setDontWalk(!definition.canWalk());
+				npc.setDontFollow(!definition.canFollow());
+				npc.setDontAttack(!definition.canAttackBack());
 				return;
 			}
 		}
 		throw new IllegalStateException("Server is full!");
 	}
 
-	public static synchronized void registerCannon(GameObject cannon) {
-		if(!cannons.contains(cannon)){
-			cannons.add(cannon);
+	public static synchronized void registerCannon(Long owner, GameObject cannon) {
+		if(!cannons.containsKey(owner)){
+			cannons.put(owner, cannon);
 		}
 	}
 	
-	public static synchronized void unregisterCannon(GameObject cannon) {
-		if(cannons.contains(cannon)){
-			cannons.remove(cannon);
+	public static synchronized void unregisterCannon(Long owner, GameObject cannon) {
+		if(cannons.containsKey(owner)){
+			cannons.remove(owner);
 		}
 	}
 	
@@ -364,6 +353,16 @@ public class World {
 		}
 		return amount;
 	}
+	
+	public static int npcAmount(int id) {
+		int amount = 0;
+		for (Npc npc : npcs) {
+			if (npc != null && npc.getNpcId() == id) {
+				amount++;
+			}
+		}
+		return amount;
+	}
 
 	public static Player getPlayerByName(String name) {
 		return getPlayerByName(NameUtil.nameToLong(name));
@@ -408,7 +407,7 @@ public class World {
 		    continue;
 		}
 		if (player.getStaffRights() >= 1) {
-		    player.getActionSender().sendMessage("@red@[Staff] " + name + ": @blu@" + NameUtil.uppercaseFirstLetter(message));
+		    player.getActionSender().sendMessage("@red@[Staff] " + name + ": @blu@" + NameUtil.uppercaseFirstLetter(message), true);
 		}
 	    }
 	}
@@ -430,7 +429,7 @@ public class World {
 		    continue;
 		}
 		if (player.inPestControlGameArea()) {
-		    player.getActionSender().sendMessage("@red@[Pest Control] " + name + ": @blu@" + NameUtil.uppercaseFirstLetter(message));
+		    player.getActionSender().sendMessage("@red@[Pest Control] " + name + ": @blu@" + NameUtil.uppercaseFirstLetter(message), true);
 		}
 	    }
 	}
@@ -441,8 +440,17 @@ public class World {
 				continue;
 			}
 			if (player.getStaffRights() >= 1) {
-				player.getActionSender().sendMessage("@red@[StaffAlert]: @bla@" + NameUtil.uppercaseFirstLetter(message));
+				player.getActionSender().sendMessage("@red@[StaffAlert]: @bla@" + NameUtil.uppercaseFirstLetter(message), true);
 			}
+		}
+	}
+	
+	public static void messageToWorld(String message) {
+		for (Player player : players) {
+			if (player == null) {
+				continue;
+			}
+			player.getActionSender().sendMessage(message, true);
 		}
 	}
 
@@ -500,7 +508,7 @@ public class World {
 	 * @return the gameobjects
 	 */
 	public static GameObject[] getCannons() {
-		return cannons.toArray(new GameObject[cannons.size()]);
+		return cannons.values().toArray(new GameObject[cannons.size()]);
 	}
 	
 	/**

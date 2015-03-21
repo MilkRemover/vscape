@@ -8,8 +8,7 @@ import java.util.List;
 import com.rs2.Constants;
 import com.rs2.model.content.Following;
 import com.rs2.model.content.WalkInterfaces;
-import com.rs2.model.content.minigames.barrows.Barrows;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtollNpcs;
 import com.rs2.model.npcs.Npc;
 import com.rs2.model.players.MovementLock;
 import com.rs2.model.players.Player;
@@ -79,6 +78,14 @@ public class MovementHandler {
 
 	public void stopMovement() {
 		reset();
+	}
+	
+	public void setMovementLock(MovementLock lock){
+		movementLock = lock;
+	}
+	
+	public MovementLock getMovementLock(){
+		return movementLock;
 	}
 
 	public void lock(MovementLock lock) {
@@ -182,7 +189,7 @@ public class MovementHandler {
 			}
 			//if (!player.currentArea.equals(Position.getCurrentArea(player)))
 			WalkInterfaces.addWalkableInterfaces(player);
-			player.getRegionMusic().playMusic();
+			player.getMusicManager().playRegionMusic();
 		}
 	}
 
@@ -209,6 +216,9 @@ public class MovementHandler {
 	public void finish() {
 		if (waypoints.size() > 0)
 			waypoints.removeFirst();
+		if(this.entity.isNpc() && ((Npc)entity).walkingBackToSpawn) {
+		    ((Npc)entity).walkingBackToSpawn = false;
+		}
 
 	}
 
@@ -318,6 +328,8 @@ public class MovementHandler {
 			Player player = (Player) entity;
 			player.getAttributes().put("isBanking", Boolean.FALSE);
 			player.getAttributes().put("isShopping", Boolean.FALSE);
+			player.getAttributes().put("smithing", Boolean.FALSE);
+			player.getAttributes().put("smelting", Boolean.FALSE);
 			TradeManager.declineTrade(player);
 			if (!player.getNewComersSide().isInTutorialIslandStage())
 				player.getActionSender().removeInterfaces();
@@ -423,7 +435,7 @@ public class MovementHandler {
 			if(n.getNpcId() == 1472) {
 			    return false;
 			}
-			if(n.isPet() || Barrows.inBarrowsCrypts(n)) {
+			if(Entity.antiStackExceptions(n)) {
 			    return false;
 			}
 			if (n.walkIntoNpc(x, y)) {

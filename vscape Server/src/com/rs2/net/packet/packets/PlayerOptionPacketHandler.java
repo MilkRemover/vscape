@@ -7,7 +7,7 @@ import com.rs2.model.content.combat.CombatManager;
 import com.rs2.model.content.minigames.Snowball;
 import com.rs2.model.content.skills.magic.MagicSkill;
 import com.rs2.model.content.minigames.gnomeball.GnomeBall;
-import com.rs2.model.content.quests.ChristmasEvent;
+import com.rs2.model.content.quests.impl.ChristmasEvent.ChristmasEvent;
 import com.rs2.model.content.skills.magic.Spell;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.players.Player;
@@ -157,22 +157,22 @@ public class PlayerOptionPacketHandler implements PacketHandler {
 		final int taskId = player.getTask();
 		if(player.isIronman())
 		{
-			player.getActionSender().sendMessage("You cannot trade with other players as an ironman.");
+			player.getActionSender().sendMessage("You cannot trade with other players as an ironman.", true);
 			return;
 		}
 		if(otherPlayer.isIronman())
 		{
-			player.getActionSender().sendMessage("This player is an ironman and cannot trade.");
+			player.getActionSender().sendMessage("This player is an ironman and cannot trade.", true);
 			return;
 		}
 		if (otherPlayer.getTradingEntity() == player) {
 			TradeManager.declineTrade(player);
 		} else if (otherPlayer.getInterface() > 0) {
-			player.getActionSender().sendMessage("This player is busy.");
+			player.getActionSender().sendMessage("This player is busy.", true);
 			return;
 		}
 		if (Constants.SYSTEM_UPDATE) {
-			player.getActionSender().sendMessage("You can't trade during a system update.");
+			player.getActionSender().sendMessage("You can't trade during a system update.", true);
 			return;
 		}
 		//player.setClickId(otherPlayerId);

@@ -1,8 +1,8 @@
 package com.rs2.net.packet.packets;
 
-import com.rs2.Constants;
 import com.rs2.model.content.dialogue.Dialogues;
-import com.rs2.model.content.quests.DwarfCannon;
+import com.rs2.model.content.quests.impl.DeathPlateau.DeathPlateau;
+import com.rs2.model.content.quests.impl.DwarfCannon;
 import com.rs2.model.content.skills.Crafting.DramenBranch;
 import com.rs2.model.content.skills.Crafting.GlassMaking;
 import com.rs2.model.content.skills.Crafting.LeatherMakingHandler;
@@ -14,6 +14,8 @@ import com.rs2.model.content.skills.Crafting.Weaving;
 import com.rs2.model.content.skills.Fletching.HandleLogCutting;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.cooking.Cooking;
+import com.rs2.model.content.skills.cooking.DairyChurn;
+import com.rs2.model.content.skills.cooking.FillHandler;
 import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.skills.smithing.Smelting;
 import com.rs2.model.content.treasuretrails.ChallengeScrolls;
@@ -100,6 +102,10 @@ public class ChatInterfacePacketHandler implements PacketHandler {
 		} else if (player.getEnterXInterfaceId() == 207) {
 			ChallengeScrolls.handleAnswer(player, amount, player.challengeScroll);
 			return;
+		} else if (player.getEnterXInterfaceId() == 347400) {
+			player.getDice().setBet(amount);
+			Dialogues.sendDialogue(player, DeathPlateau.HAROLD, 17, 0);
+			return;
 		} else if (player.getEnterXInterfaceId() == 208) {
 			if(amount <= 0) {
 			    player.getActionSender().sendMessage("You can't exchange 0 points!");
@@ -122,22 +128,45 @@ public class ChatInterfacePacketHandler implements PacketHandler {
 			    player.getDialogue().sendPlayerChat(amount + " please.", Dialogues.HAPPY);
 			}
 			return;
-		} else if (player.getEnterXInterfaceId() == 53150) {
+		} else if ((player.getEnterXInterfaceId() == 53150 || player.getEnterXInterfaceId() == 34167) && (player.getStatedInterface().equals("cookFire") || player.getStatedInterface().equals("cookRange"))) {
 			Cooking.handleCookingTick(player, amount);
 			return;
+		} else if (player.getEnterXInterfaceId() == 34171 && (player.getStatedInterface().equals("cookFire") || player.getStatedInterface().equals("cookRange"))) {
+			Cooking.handleSinewTick(player, amount);
+			return;
+		} else if (player.getEnterXInterfaceId() == 34182 || player.getEnterXInterfaceId() == 34186 || player.getEnterXInterfaceId() == 34190) {
+		    if(player.getStatedInterface().equals("dairyChurn"))
+		{
+			final DairyChurn.ChurnData churnData = DairyChurn.ChurnData.forId(player.getEnterXInterfaceId());
+			if(churnData != null)
+			{
+				if(amount == 0)
+				{
+					amount = 1;
+				}
+				player.setNewSkillTask();
+				DairyChurn.churnItem(player,churnData,amount);
+			}
+		}
 		}
 		else if (player.getEnterXInterfaceId() == 3823) {
 			ShopManager.sellItem(player, player.getEnterXSlot(), player.getEnterXId(), amount);
 			return;
 		}
 		else if (player.getEnterXInterfaceId() == 6212) {
-		    if(player.getStatedInterface().equals("Ectoplasm")) {
-			Ectofuntus.handleFillTick(player, amount);
-			return;
-		    } else if(player.getStatedInterface().equals("cannonball")) {
-			DwarfCannon.craftCannonBall(player, amount);
-			return;
-		    }
+			if (player.getStatedInterface().equals("Ectoplasm")) {
+				Ectofuntus.handleFillTick(player, amount);
+				return;
+			} else if (player.getStatedInterface().equals("ectoLoading")) {
+				Ectofuntus.handleLoadTick(player, amount);
+				return;
+			} else if (player.getStatedInterface().equals("cannonball")) {
+				DwarfCannon.craftCannonBall(player, amount);
+				return;
+			} else if (player.getStatedInterface().equals("fillWater")) {
+				FillHandler.handleFillTick(player, amount);
+				return;
+			}
 		}
 		else if (player.getEnterXInterfaceId() == 7777) {
 		    if(player.getStatedInterface().equals("cannonball")) {

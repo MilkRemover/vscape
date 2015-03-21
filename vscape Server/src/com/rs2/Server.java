@@ -6,31 +6,36 @@ import com.rs2.cache.object.GameObjectData;
 import com.rs2.cache.object.ObjectLoader;
 import com.rs2.model.World;
 import com.rs2.model.content.combat.CombatManager;
-import com.rs2.model.content.minigames.GroupMiniGame;
-import com.rs2.model.content.minigames.groupminigames.CastleWarsCounter;
+import com.rs2.model.content.consumables.Food;
 import com.rs2.model.content.minigames.magetrainingarena.*;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtollNpcs;
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.impl.DeathPlateau.BurthorpeCampHandler;
 import com.rs2.model.content.skills.fishing.FishingSpots;
 import com.rs2.model.npcs.Npc;
+import com.rs2.model.npcs.NpcDefinition;
 import com.rs2.model.npcs.NpcLoader;
+import com.rs2.model.npcs.drop.NpcDropController;
 import com.rs2.model.players.GlobalGroundItem;
 import com.rs2.model.players.HighscoresManager;
 import com.rs2.model.players.Player;
+import com.rs2.model.players.ShopManager;
 import com.rs2.model.players.Player.LoginStages;
+import com.rs2.model.players.clanchat.ClanChatHandler;
 import com.rs2.model.players.item.ItemDefinition;
 import com.rs2.model.players.item.ItemManager;
+import com.rs2.model.region.music.MusicLoader;
 import com.rs2.model.tick.Tick;
 import com.rs2.net.DedicatedReactor;
 import com.rs2.net.packet.PacketManager;
-import com.rs2.task.TaskScheduler;
 import com.rs2.task.Task;
+import com.rs2.task.TaskScheduler;
 import com.rs2.util.*;
 import com.rs2.util.clip.ObjectDef;
 import com.rs2.util.clip.Rangable;
 import com.rs2.util.clip.Region;
-import com.rs2.util.plugin.PluginManager;
 import com.rs2.util.sql.SQL;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -56,11 +61,8 @@ public class Server implements Runnable {
 	private final int cycleRate;
 	private long cycle;
 	private int infoDisplayCounter = 10;
-
 	private static long minutesCounter;
-
-    public static GroupMiniGame castleWarsGroup = new GroupMiniGame(new CastleWarsCounter());
-    
+	
 	private Selector selector;
 	private InetSocketAddress address;
 	private ServerSocketChannel serverChannel;
@@ -99,10 +101,11 @@ public class Server implements Runnable {
 		Constants.DEVELOPER_MODE = false;
 		Constants.SERVER_DEBUG = false;
 		Constants.UNLIMITED_RUN = true;
+		Constants.SQL_ENABLED = true;
 
         //PlayerCleaner.start();
         //System.exit(0);
-
+		
         if (host.equals("127.0.0.1")) {
             System.out.println("Starting live server!");
             Constants.DEVELOPER_MODE = false;
@@ -175,9 +178,15 @@ public class Server implements Runnable {
             GlobalVariables.degradeInfo = Misc.loadDegradeInfo();
             GlobalVariables.npcDump = Misc.getNpcDump();
             GlobalVariables.itemDump = Misc.getItemDump();
-	    Misc.initAlphabet();
+            Misc.initAlphabet();
 
 
+    		//AreaDefinition.init();
+            ItemDefinition.init();
+    		NpcDropController.init();
+    		NpcDefinition.init();
+    		ShopManager.loadShops();
+    		Food.init();
 			// load all xstream related files.
 			XStreamUtil.loadAllFiles();
 
@@ -188,7 +197,7 @@ public class Server implements Runnable {
             RSInterface.load();
 
 			// Load plugins
-			PluginManager.loadPlugins();
+			//PluginManager.loadPlugins();
 
 			// Load regions
 			ObjectDef.loadConfig();
@@ -225,13 +234,22 @@ public class Server implements Runnable {
 
 			NpcLoader.loadAutoSpawn("./data/npcs/spawn-config.cfg");
 			ApeAtollNpcs.init();
+			BurthorpeCampHandler.init();
 
             HighscoresManager.load();
+            
+            PlayerSave.saveCycle();
+            
+            GlobalVariables.loadBans();
+            
+            ClanChatHandler.loadClans();
+            
+            MusicLoader.Load();
 
 			// Start up and get a'rollin!
 			startup();
 			System.out.println("Online!");
-			while (!Thread.interrupted()) {
+		/*	while (!Thread.interrupted()) {
 				try {
 					cycle();
 					sleep();
@@ -239,15 +257,10 @@ public class Server implements Runnable {
 					PlayerSave.saveAllPlayers();
 					ex.printStackTrace();
 				}
-			}
+			}*/
 			scheduler.schedule(new Task() {
 				@Override
 				protected void execute() {
-					if (Thread.interrupted()) {
-						PlayerSave.saveAllPlayers();
-						stop();
-						return;
-					}
 					try {
 						cycle();
 					} catch (Exception ex) {
@@ -260,7 +273,7 @@ public class Server implements Runnable {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		PluginManager.close();
+		//PluginManager.close();
 	}
 
 	/**
@@ -285,7 +298,7 @@ public class Server implements Runnable {
 		}
 
 		// Finally, initialize whatever else we need.
-		cycleTimer = new Misc.Stopwatch();
+		//cycleTimer = new Misc.Stopwatch();
 	}
 
 	/**
@@ -355,7 +368,7 @@ public class Server implements Runnable {
 
 		// Next, perform game processing.
 		try {
-			PluginManager.tick();
+			//PluginManager.tick();
 			World.process();
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -372,11 +385,13 @@ public class Server implements Runnable {
             }
         }
         b.stop();
-        if(infoDisplayCounter == 0)
-        {System.out.println("[ENGINE]: Server load: " + cycle + "% with " + World.playerAmount() + " players");
-        infoDisplayCounter = 300;}
-        else
-        {infoDisplayCounter--;}
+        Benchmarks.resetAll();
+      /*  if(infoDisplayCounter == 0){
+        	System.out.println("[ENGINE]: Server load: " + cycle + "% with " + World.playerAmount() + " players");
+        	infoDisplayCounter = 300;
+    	}else{
+        	infoDisplayCounter--;
+    	}*/
 	}
 
 	/**
@@ -387,7 +402,7 @@ public class Server implements Runnable {
 	private void sleep() {
 		try {
 			long sleepTime = cycleRate - cycleTimer.elapsed();
-            boolean sleep = sleepTime > 0 && sleepTime <= 600;
+            boolean sleep = sleepTime > 0 && sleepTime < 600;
             for (int i = 0; i < PacketManager.SIZE; i++) {
                 Benchmark b = PacketManager.packetBenchmarks[i];
                 if (!sleep && b.getTime() > 0)
@@ -395,6 +410,7 @@ public class Server implements Runnable {
                 b.reset();
             }
 			if (sleep) {
+				cycle = 0;
                 Benchmarks.resetAll();
 				//System.out.println("[ENGINE]: Sleeping for " + sleepTime + "ms");
 				Thread.sleep(sleepTime);
@@ -404,11 +420,11 @@ public class Server implements Runnable {
 				/*if (cycle > 999) {
 					initiateRestart();
 				}*/
-				System.out.println("[WARNING]: Server load: " + cycle + "%!");
+				System.out.println("[WARNING]: Server Overload: " + cycle + "%!");
                 Benchmarks.printAll();
                 Benchmarks.resetAll();
-                for (int i = 0; i < 5; i++)
-                    System.out.println("");
+              /*  for (int i = 0; i < 5; i++)
+                    System.out.println("");*/
 			}
 		} catch (Exception ex) {
             ex.printStackTrace();

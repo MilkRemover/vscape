@@ -127,7 +127,7 @@ public class Misc {
 	}
 
 	public static boolean checkClip(Position pos1, Position pos2, int sizeX, int sizeY) {
-		return Region.canMove(pos1.getX(), pos1.getY(), pos2.getX(), pos2.getY(), pos1.getZ(), sizeX, sizeY);
+		return Region.canMoveNpc(pos1.getX(), pos1.getY(), pos2.getX(), pos2.getY(), pos1.getZ(), sizeX, sizeY);
 	}
 	
 	public static boolean checkClip(Position first, Position second, boolean melee) {
@@ -136,7 +136,7 @@ public class Misc {
 
 	public static boolean checkClip(int x, int y, int x2, int y2, int height, boolean melee) {
 		if (melee) {
-			return Region.canMove(x, y, x2, y2, height, 1, 1);
+			return Region.canMoveNpc(x, y, x2, y2, height, 1, 1);
 		} else {
 			return Rangable.canMove(x, y, x2, y2, height, 1, 1);
 		}
@@ -578,7 +578,6 @@ public class Misc {
 	
 	public static String[] loadPatchNotes() throws IOException {
 		String[] patchNotes = new String[100];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/patchnotes.txt")));
 	
@@ -597,7 +596,6 @@ public class Misc {
 	}
 	public static String[] loadInfo() throws IOException {
 		String[] info = new String[200];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/info.txt")));
 	
@@ -618,7 +616,6 @@ public class Misc {
 	
 	public static String[] loadRules() throws IOException {
 		String[] rules = new String[200];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/rules.txt")));
 	
@@ -638,7 +635,6 @@ public class Misc {
 	
 	public static String[] loadDegradeInfo() throws IOException {
 		String[] info = new String[200];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/degradeinfo.txt")));
 	
@@ -657,7 +653,6 @@ public class Misc {
 	}
 	public static String[] getNpcDump() throws IOException {
 		String[] info = new String[7000];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("datajson/npcs.txt")));
 	
@@ -676,7 +671,6 @@ public class Misc {
 	}
 	public static String[] getItemDump() throws IOException {
 		String[] info = new String[12000];
-		int count = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("datajson/items.txt")));
 	

@@ -26,10 +26,14 @@ import com.rs2.model.content.minigames.warriorsguild.WarriorsGuild;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.players.bank.BankManager;
 import com.rs2.model.players.Player;
+import com.rs2.model.players.Player.LoginStages;
 import com.rs2.model.players.item.Item;
 import com.rs2.net.packet.packets.AppearancePacketHandler;
-import com.rs2.model.content.quests.Quest;
+import com.rs2.task.Task;
+import com.rs2.task.TaskScheduler;
+
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.impl.Quest;
 import com.rs2.model.content.skills.magic.Spell;
 /**
  * Static utility methods for saving and loading players.
@@ -49,6 +53,39 @@ public class PlayerSave {
 	
 	public static boolean hasNewFormat (final Player player){
 		return new File(directoryNew + player.getUsername() + ".gz").exists();
+	}
+	
+	public static final int SAVE_INTERVAL = 30; // in minutes
+	
+	public static void saveCycle() {
+		new TaskScheduler().schedule(new Task(SAVE_INTERVAL * 100) {
+		    @Override public void execute() {
+		    	if(Constants.SYSTEM_UPDATE)
+		    	{
+		    		stop();
+		    		return;
+		    	}
+                if(World.getPlayers() == null || World.getPlayers().length <= 0)
+                {
+                	return;
+                }
+	            synchronized (World.getPlayers()) {
+	                final Player[] players = World.getPlayers();
+	                for (Player p : players) {
+	                    if (p != null && p.getIndex() != -1 && !p.getLoginStage().equals(LoginStages.LOGGING_OUT)) {
+	                        try {
+	                            PlayerSave.save(p);
+	                        } catch (Exception e) {
+	                            e.printStackTrace();
+	                        }
+	                    }
+	                }
+	            }
+	            World.messageToStaff("@dre@Auto-Saved Players.");
+				System.out.println("Auto-Saved Players.");
+		    }
+	    });
+	
 	}
 	
 	public static void saveJson(final Player player) {
@@ -416,48 +453,48 @@ public class PlayerSave {
 			write.writeInt(player.getMageArenaCasts(Spell.CLAWS_OF_GUTHIX));
 			write.writeInt(player.getMageArenaStage());
 			write.writeInt(player.getDefender());
-			    write.writeBoolean(player.isPhoenixGang());
-			    write.writeBoolean(player.isBlackArmGang());
-			    write.writeBoolean(player.getMelzarsDoorUnlock());
+			    write.writeBoolean(player.getQuestVars().isPhoenixGang());
+			    write.writeBoolean(player.getQuestVars().isBlackArmGang());
+			    write.writeBoolean(player.getQuestVars().getMelzarsDoorUnlock());
 			    write.writeInt(player.getFightCavesWave());
-			    write.writeBoolean(player.getBananaCrate());
-			    write.writeInt(player.getBananaCrateCount());
+			    write.writeBoolean(player.getQuestVars().getBananaCrate());
+			    write.writeInt(player.getQuestVars().getBananaCrateCount());
 			    write.writeInt(player.getEctoWorshipCount());
 			    try {
-				write.writeUTF(player.getTopHalfFlag());
+				write.writeUTF(player.getQuestVars().getTopHalfFlag());
 			    } catch (IOException e) {
 				write.writeUTF("undyed");
 			    }
 			    try {
-				write.writeUTF(player.getBottomHalfFlag());
+				write.writeUTF(player.getQuestVars().getBottomHalfFlag());
 			    } catch (IOException e) {
 				write.writeUTF("undyed");
 			    }
 			    try {
-				write.writeUTF(player.getSkullFlag());
+				write.writeUTF(player.getQuestVars().getSkullFlag());
 			    } catch (IOException e) {
 				write.writeUTF("undyed");
 			    }
 			    try {
-				write.writeUTF(player.getDesiredTopHalfFlag());
+				write.writeUTF(player.getQuestVars().getDesiredTopHalfFlag());
 			    } catch (IOException e) {
 				write.writeUTF("black");
 			    }
 			    try {
-				write.writeUTF(player.getDesiredBottomHalfFlag());
+				write.writeUTF(player.getQuestVars().getDesiredBottomHalfFlag());
 			    } catch (IOException e) {
 				write.writeUTF("black");
 			    }
 			    try {
-				write.writeUTF(player.getDesiredSkullFlag());
+				write.writeUTF(player.getQuestVars().getDesiredSkullFlag());
 			    } catch (IOException e) {
 				write.writeUTF("black");
 			    }
-			    write.writeBoolean(player.petitionSigned());
+			    write.writeBoolean(player.getQuestVars().petitionSigned());
 			    write.writeInt(player.getGodBook());
-			    write.writeBoolean(player.givenSnailSlime());
-			    write.writeBoolean(player.givenIdPapers());
-			    write.writeBoolean(player.usedFreeGauntletsCharge());
+			    write.writeBoolean(player.getQuestVars().givenSnailSlime());
+			    write.writeBoolean(player.getQuestVars().givenIdPapers());
+			    write.writeBoolean(player.getQuestVars().usedFreeGauntletsCharge());
 			    write.writeInt(player.getCoalTruckAmount());
 			    write.writeInt(player.getDfsCharges());
 			write.flush();
@@ -534,6 +571,7 @@ public class PlayerSave {
 		
 	}
 	
+	@SuppressWarnings("unused")
 	public static int loadQuests(Player player) throws IOException {
     	if(!useNewFormat || (useNewFormat && !hasNewFormat(player)))
     	{
@@ -646,6 +684,7 @@ public class PlayerSave {
     	}
 	}//try now kk
 
+    
 	public static void saveAllPlayers() {
         synchronized (World.getPlayers()) {
             final Player[] players = World.getPlayers();
@@ -794,7 +833,7 @@ public class PlayerSave {
                 }
 	            for (int i = 0; i < player.getFriends().length; i++) {
 					long friendLong = load.readLong();
-					if(friendLong < 0L || friendLong >= 0x5b5b57f8a98a5dd1L)
+					if(friendLong < 0L || friendLong >= 0x7dcff8986ea31000L)
 						continue;
 					if(!player.getFriendsConverted()){
 						friendLong = NameUtil.nameToLong(NameUtil.longToNameOld(friendLong));
@@ -804,7 +843,7 @@ public class PlayerSave {
 	            player.setFriendsConverted(true);
 	            for (int i = 0; i < player.getIgnores().length; i++) {
 					long ignoreLong = load.readLong();
-					if(ignoreLong < 0L || ignoreLong >= 0x5b5b57f8a98a5dd1L)
+					if(ignoreLong < 0L || ignoreLong >= 0x7dcff8986ea31000L)
 						continue;
 					if(!player.getIgnoresConverted()){
 						ignoreLong = NameUtil.nameToLong(NameUtil.longToNameOld(ignoreLong));
@@ -1090,15 +1129,15 @@ public class PlayerSave {
 		WarriorsGuild.findDefender(player);
             }
 	    try {
-            	player.joinPhoenixGang(load.readBoolean());
+            	player.getQuestVars().joinPhoenixGang(load.readBoolean());
             } catch (IOException e) { System.out.println("here13");
             }
 	    try {
-            	player.joinBlackArmGang(load.readBoolean());
+            	player.getQuestVars().joinBlackArmGang(load.readBoolean());
             } catch (IOException e) { System.out.println("here14");
             }
 	    try {
-            	player.setMelzarsDoorUnlock(load.readBoolean());
+            	player.getQuestVars().setMelzarsDoorUnlock(load.readBoolean());
             } catch (IOException e) { System.out.println("here15");
             }
 	    try {
@@ -1107,13 +1146,13 @@ public class PlayerSave {
 		player.setFightCavesWave(0);
             }
 	    try {
-            	player.setBananaCrate(load.readBoolean());
+            	player.getQuestVars().setBananaCrate(load.readBoolean());
             } catch (IOException e) { System.out.println("here17");
             }
 	    try {
-		    player.setBananaCrateCount(load.readInt());
+		    player.getQuestVars().setBananaCrateCount(load.readInt());
             } catch (IOException e) { System.out.println("here18");
-		player.setBananaCrateCount(0);
+		player.getQuestVars().setBananaCrateCount(0);
             }
 	    try {
 		player.setEctoWorshipCount(load.readInt());
@@ -1121,40 +1160,40 @@ public class PlayerSave {
 		player.setEctoWorshipCount(0);
             }
 	    try {
-		player.dyeGhostsAhoyFlag("top", load.readUTF());
+		player.getQuestVars().dyeGhostsAhoyFlag("top", load.readUTF());
             } catch (IOException e) { System.out.println("20");
 		
-		player.dyeGhostsAhoyFlag("top", "undyed");
+		player.getQuestVars().dyeGhostsAhoyFlag("top", "undyed");
             }
 	    try {
-		    player.dyeGhostsAhoyFlag("bottom", load.readUTF());
+		    player.getQuestVars().dyeGhostsAhoyFlag("bottom", load.readUTF());
             } catch (IOException e) { System.out.println("21"); 
-		player.dyeGhostsAhoyFlag("bottom", "undyed");
+		player.getQuestVars().dyeGhostsAhoyFlag("bottom", "undyed");
             }
 	    try {
-		    player.dyeGhostsAhoyFlag("skull", load.readUTF());
+		    player.getQuestVars().dyeGhostsAhoyFlag("skull", load.readUTF());
             } catch (IOException e) { System.out.println("22"); 
-		player.dyeGhostsAhoyFlag("skull", "undyed");
+		player.getQuestVars().dyeGhostsAhoyFlag("skull", "undyed");
             }
 	    try {
-		    player.setDesiredGhostsAhoyFlag("top", load.readUTF());
+		    player.getQuestVars().setDesiredGhostsAhoyFlag("top", load.readUTF());
             } catch (IOException e) { System.out.println("23");
-		player.setDesiredGhostsAhoyFlag("top", "black");
+		player.getQuestVars().setDesiredGhostsAhoyFlag("top", "black");
             }
 	    try {
-		    player.setDesiredGhostsAhoyFlag("bottom", load.readUTF());
+		    player.getQuestVars().setDesiredGhostsAhoyFlag("bottom", load.readUTF());
             } catch (IOException e) { System.out.println("24");
-		player.setDesiredGhostsAhoyFlag("bottom", "black");
+		player.getQuestVars().setDesiredGhostsAhoyFlag("bottom", "black");
             }
 	    try {
-		    player.setDesiredGhostsAhoyFlag("top", load.readUTF());
+		    player.getQuestVars().setDesiredGhostsAhoyFlag("top", load.readUTF());
             } catch (IOException e) { System.out.println("25");
-		player.setDesiredGhostsAhoyFlag("skull", "black");
+		player.getQuestVars().setDesiredGhostsAhoyFlag("skull", "black");
             }
 	    try {
-            	player.setPetitionSigned(load.readBoolean());
+            	player.getQuestVars().setPetitionSigned(load.readBoolean());
             } catch (IOException e) { System.out.println("26");
-		player.setPetitionSigned(false);
+		player.getQuestVars().setPetitionSigned(false);
             }
 	    try {
             	player.setGodBook(load.readInt());
@@ -1162,19 +1201,19 @@ public class PlayerSave {
 		player.setGodBook(0);
             }
 	    try {
-            	player.setGivenSnailSlime(load.readBoolean());
+            	player.getQuestVars().setGivenSnailSlime(load.readBoolean());
             } catch (IOException e) { System.out.println("28");
-		player.setGivenSnailSlime(false);
+		player.getQuestVars().setGivenSnailSlime(false);
             }
 	    try {
-            	player.setGivenIdPapers(load.readBoolean());
+            	player.getQuestVars().setGivenIdPapers(load.readBoolean());
             } catch (IOException e) { System.out.println("29");
-		player.setGivenIdPapers(false);
+		player.getQuestVars().setGivenIdPapers(false);
             }
 	    try {
-            	player.setHasUsedFreeGauntletsCharge(load.readBoolean());
+            	player.getQuestVars().setHasUsedFreeGauntletsCharge(load.readBoolean());
             } catch (IOException e) { System.out.println("30");
-		player.setHasUsedFreeGauntletsCharge(false);
+		player.getQuestVars().setHasUsedFreeGauntletsCharge(false);
             }
 	    try {
             	player.setCoalTruckAmount(load.readInt());

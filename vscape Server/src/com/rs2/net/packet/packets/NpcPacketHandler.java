@@ -4,15 +4,14 @@ import com.rs2.Constants;
 import com.rs2.model.World;
 import com.rs2.model.content.combat.CombatManager;
 import com.rs2.model.content.dialogue.Dialogues;
-import com.rs2.model.content.quests.AnimalMagnetism;
-import com.rs2.model.content.quests.DemonSlayer;
-import com.rs2.model.content.quests.GhostsAhoy;
-import com.rs2.model.content.quests.GhostsAhoyPetition;
-import com.rs2.model.content.quests.HeroesQuest;
-import com.rs2.model.content.quests.PriestInPeril;
-import com.rs2.model.content.quests.TheGrandTree;
-import com.rs2.model.content.quests.TreeGnomeVillage;
-import com.rs2.model.content.quests.WaterfallQuest;
+import com.rs2.model.content.quests.impl.AnimalMagnetism;
+import com.rs2.model.content.quests.impl.DemonSlayer;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoyPetition;
+import com.rs2.model.content.quests.impl.HeroesQuest;
+import com.rs2.model.content.quests.impl.TheGrandTree;
+import com.rs2.model.content.quests.impl.TreeGnomeVillage;
+import com.rs2.model.content.quests.impl.WaterfallQuest;
 import com.rs2.model.content.skills.magic.Spell;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.npcs.Npc;
@@ -81,12 +80,12 @@ public class NpcPacketHandler implements PacketHandler {
 		NpcDefinition npcDef = new Npc(npcId).getDefinition();
 		if(npcDef != null){
 			if(npcDef.getExamine() == null || npcDef.getExamine() == "null"){
-				player.getActionSender().sendMessage("It's an NPC.");
+				player.getActionSender().sendMessage("It's an NPC.", true);
 			}else{
-				player.getActionSender().sendMessage(npcDef.getExamine());
+				player.getActionSender().sendMessage(npcDef.getExamine(), true);
 			}
 		}else{
-			player.getActionSender().sendMessage("It's an NPC.");
+			player.getActionSender().sendMessage("It's an NPC.", true);
 		}
 	}
 
@@ -228,9 +227,6 @@ public class NpcPacketHandler implements PacketHandler {
 			return;
 		}
 		if (npc.getDefinition().isAttackable()) {
-		    if(npc.getNpcId() >= 6026 && npc.getNpcId() < 6046 && player.getEquipment().getId(Constants.WEAPON) != PriestInPeril.WOLFBANE) {
-			npc.sendTransform(npc.getNpcId() - 20, 100000);
-		    }
 		    if(npc.getNpcId() == HeroesQuest.GRIP) {
 			HeroesQuest.handleShootGrip(player, npc);
 			return;

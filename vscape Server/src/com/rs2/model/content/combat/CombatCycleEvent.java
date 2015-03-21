@@ -31,7 +31,7 @@ public class CombatCycleEvent extends CycleEvent {
 	public void execute(CycleEventContainer container) {
 		try {
 			// check if attacker executes a different task
-			if (!attacker.checkTask(taskId) || attacker.getCombatingEntity() == null) {
+			if (!attacker.checkTask(taskId) || attacker.getCombatingEntity() == null || victim == null) {
 				container.stop();
 				return;
 			}
@@ -100,6 +100,17 @@ public class CombatCycleEvent extends CycleEvent {
 			    } else if (attacker.isPlayer() && victim.isNpc() && ((Player) attacker).getMMVars().isMonkey()) {
 				((Player) attacker).getActionSender().sendMessage("You cannot attack as a monkey!");
 				CombatManager.resetCombat(attacker);
+			    }
+			}
+			if(attacker != null && victim != null && attacker.isPlayer() && victim.isNpc()) {
+			    if(attacker.failedCriticalRequirement()) {
+				attacker.setFailedCriticalRequirement(false);
+				CombatManager.resetCombat(attacker);
+				attacker.getMovementHandler().reset();
+				return;
+			    }
+			    if(((Npc)victim).getNpcId() == 1052) {
+				return;
 			    }
 			}
 			/* ORDER IS SUPER IMPORTANT HERE, DON'T ADD ANYTHING AFTER */
@@ -231,6 +242,9 @@ public class CombatCycleEvent extends CycleEvent {
 	public static void startCombat(Entity attacker, Entity victim) {
 	    if ((attacker.isNpc() && ((Npc) attacker).getNpcId() == 1472 && victim.isNpc()) || (attacker.isNpc() && ((Npc)attacker).getNpcId() >= 1442 && ((Npc)attacker).getNpcId() <= 1446)) {
 		return;
+	    }
+	    if (victim != null && victim.isNpc() && ((Npc) victim).walkingBackToSpawn) {
+		CombatManager.resetCombat(victim);
 	    }
 	    CombatCycleEvent combatEvent = new CombatCycleEvent(attacker, victim);
 	    attacker.setCombatingEntity(victim);

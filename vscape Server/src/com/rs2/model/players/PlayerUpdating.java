@@ -6,13 +6,13 @@ import com.rs2.model.World;
 import com.rs2.model.content.combat.CombatManager;
 import com.rs2.model.content.minigames.MinigameAreas;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
-import com.rs2.model.content.quests.AnimalMagnetism;
-import com.rs2.model.content.quests.BlackKnightsFortress;
-import com.rs2.model.content.quests.ChristmasEvent;
-import com.rs2.model.content.quests.DemonSlayer;
-import com.rs2.model.content.quests.GoblinDiplomacy;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
+import com.rs2.model.content.quests.impl.AnimalMagnetism;
+import com.rs2.model.content.quests.impl.BlackKnightsFortress;
+import com.rs2.model.content.quests.impl.DeathPlateau.DeathPlateau;
+import com.rs2.model.content.quests.impl.DemonSlayer;
+import com.rs2.model.content.quests.impl.GoblinDiplomacy;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtollNpcs;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.npcs.Npc;
 import com.rs2.model.players.Player.LoginStages;
@@ -80,7 +80,7 @@ public final class PlayerUpdating {
 		if (player.getUpdateFlags().isUpdateRequired()) {
 			PlayerUpdating.updateState(player, block, false, true);
 		}
-		if (player.inDarkWizardCircle() && player.getQuestStage(17) == 5 && !DemonSlayer.delrithSpawned()) {
+		if (player.getQuestStage(17) == 5 && player.inDarkWizardCircle() && !DemonSlayer.delrithSpawned()) {
 		    DemonSlayer.spawnDelrith(player);
 		    for(Npc npc : World.getNpcs()) {
 			if(npc == null) continue;
@@ -101,21 +101,12 @@ public final class PlayerUpdating {
 		if(BlackKnightsFortress.attackPlayer(player)) {
 		    BlackKnightsFortress.attackPlayer(player, true);
 		}
-		/*if(ChristmasEvent.CHRISTMAS_ENABLED && player.Area(3175, 3235, 3410, 3470) && !player.christmasUpdated && player.getLoginStage().equals(LoginStages.LOGGED_IN)) {
-		    player.christmasUpdated = true;
-		    final Player finalPlayer = player;
-		    CycleEventHandler.getInstance().addEvent(finalPlayer, new CycleEvent() {
-			@Override
-			public void execute(CycleEventContainer b) {
-			    b.stop();
+		if(player.getQuestStage(43) == 12 && player.getPosition().getY() == 3609 && player.getPosition().getX() >= 2865 && player.getLoginStage().equals(LoginStages.LOGGED_IN)) {
+			if(!player.getQuestVars().toldPathIsSafe) {
+				DeathPlateau.tellPlayerPathIsSafe(player);
 			}
-
-			@Override
-			public void stop() {
-			    finalPlayer.reloadRegion();
-			}
-		    }, 2);
-		}*/
+			
+		}
 		if(player.getPosition().getY() > 3312 && player.getPosition().getY() < 3400 && player.getPosition().getX() > 3068 && player.getPosition().getX() < 3145) {
 		    for(Npc npc : World.getNpcs()) {
 			if(npc == null || npc.getNpcId() != AnimalMagnetism.UNDEAD_TREE) continue;
@@ -128,7 +119,7 @@ public final class PlayerUpdating {
 		if(player.inGoblinVillage() && player.getQuestStage(19) < 4) {
 		    ArrayList<Npc> goblins = GoblinDiplomacy.getGreenGoblin();
 		    Npc green = goblins.get(Misc.randomMinusOne(goblins.size()));
-		    for(Npc npc : World.getNpcs()) {
+		    for(Npc npc : player.getNpcs()) {
 			if(npc == null) continue;
 			if(npc.getNpcId() == GoblinDiplomacy.RED_GOBLIN && !npc.isAttacking() 
 			    && Misc.goodDistance(npc.getPosition().clone(), green.getPosition().clone(), 4)) {

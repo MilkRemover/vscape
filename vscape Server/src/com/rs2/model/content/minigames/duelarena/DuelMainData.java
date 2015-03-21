@@ -11,6 +11,7 @@ import com.rs2.model.content.combat.projectile.ProjectileDef;
 import com.rs2.model.content.combat.projectile.ProjectileTrajectory;
 import com.rs2.model.content.combat.weapon.Weapon;
 import com.rs2.model.content.skills.Skill;
+import static com.rs2.model.players.CommandHandler.forceSpacePositions;
 import com.rs2.model.players.Player;
 import com.rs2.model.players.item.Item;
 import com.rs2.model.tick.CycleEvent;
@@ -134,9 +135,9 @@ public class DuelMainData {
 		}
 		if (forfeit) {
 			player.getActionSender().removeInterfaces();
-			player.getActionSender().sendMessage("You forfeited the duel.");
+			player.getActionSender().sendMessage("You forfeited the duel.", true);
 		} else {
-	        player.getActionSender().sendMessage("You have been defeated!");
+	        player.getActionSender().sendMessage("You have been defeated!", true);
 		}
 		player.resetEffects();
 		player.getActionSender().createPlayerHints(10, -1);
@@ -150,6 +151,15 @@ public class DuelMainData {
 	}
 
 	public void sendIntoDuel() {
+	    if(!Misc.goodDistance(player.getPosition(), opponent.getPosition(), 1)) {
+		player.getDuelInterfaces().resetDuelRules();
+		player.getDuelInteraction().endDuelInteraction(false);
+		opponent.getDuelInterfaces().resetDuelRules();
+		opponent.getDuelInteraction().endDuelInteraction(false);
+		player.teleport(forceSpacePositions[Misc.randomMinusOne(forceSpacePositions.length)]);
+		opponent.teleport(forceSpacePositions[Misc.randomMinusOne(forceSpacePositions.length)]);
+		return;
+	    }
 		final int randomNumber = Misc.random(2);
 		player.resetEffects();
 		opponent.resetEffects();
@@ -196,24 +206,24 @@ public class DuelMainData {
 			return;
 		if(player.isIronman())
 		{
-			player.getActionSender().sendMessage("You can't stake this item as an ironman.");
+			player.getActionSender().sendMessage("You can't stake this item as an ironman.", true);
 			return;
 		}
 		if(opponent.isIronman())
 		{
-			player.getActionSender().sendMessage("The opponent is an ironman staking is disabled.");
+			player.getActionSender().sendMessage("The opponent is an ironman staking is disabled.", true);
 			return;
 		}
 		if (item.getDefinition().isUntradable()) {
-			player.getActionSender().sendMessage("You can't stake this item.");
+			player.getActionSender().sendMessage("You can't stake this item.", true);
 			return;
 		}
         if(itemStaked.size() >= opponent.getInventory().getItemContainer().freeSlots() && (!item.getDefinition().isStackable() || !containsItem(item))){
-            player.getActionSender().sendMessage("The opponent has no free spaces left for that.");
+            player.getActionSender().sendMessage("The opponent has no free spaces left for that.", true);
             return;
         }
 		if (!Constants.ADMINS_CAN_INTERACT && player.getStaffRights() >= 2) {
-            player.getActionSender().sendMessage("This action is not allowed.");
+            player.getActionSender().sendMessage("This action is not allowed.", true);
             return;
         }
         if(!player.getInventory().playerHasItem(item))
@@ -302,7 +312,7 @@ public class DuelMainData {
    
 	public boolean canStartDuel() {
 		if (!player.inDuelArena() || !startedDuel())
-			player.getActionSender().sendMessage("The duel hasn't started yet!");
+			player.getActionSender().sendMessage("The duel hasn't started yet!", true);
 		return player.inDuelArena() && startedDuel();
 	}
 
@@ -310,11 +320,11 @@ public class DuelMainData {
 		if (player.getSkill().getLevel()[Skill.HITPOINTS] < player.getSkill().getPlayerLevel(Skill.HITPOINTS)) {
 			player.getUpdateFlags().sendGraphic(84);
 			player.getUpdateFlags().sendAnimation(866);
-			player.getActionSender().sendMessage("You have been healed.");
+			player.getActionSender().sendMessage("You have been healed.", true);
 			player.getSkill().setSkillLevel(Skill.HITPOINTS, player.getSkill().getPlayerLevel(Skill.HITPOINTS));
 			player.getSkill().refresh(Skill.HITPOINTS);
 		} else {
-			player.getActionSender().sendMessage("You are already very healthy.");
+			player.getActionSender().sendMessage("You are already very healthy.", true);
 		}
 	}
 

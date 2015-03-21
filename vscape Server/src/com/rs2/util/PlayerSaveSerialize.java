@@ -1,6 +1,7 @@
 package com.rs2.util;
 
 import java.lang.reflect.Type;
+import java.util.Date;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -8,8 +9,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.rs2.model.content.quests.Quest;
+import com.rs2.GlobalVariables;
+
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.impl.Quest;
 import com.rs2.model.content.skills.magic.Spell;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.players.Player;
@@ -26,18 +29,21 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		characterObj.addProperty("rights", player.getStaffRights());
 		characterObj.addProperty("mac", player.getMacAddress());
 		characterObj.addProperty("host", player.getHost());
+		characterObj.addProperty("lastseen", GlobalVariables.datetime.format(new Date()));
 		characterObj.addProperty("muteExpire", player.getMuteExpire());
 		characterObj.addProperty("banExpire", player.getBanExpire());
 		characterObj.addProperty("inJail", player.getInJail());
+		characterObj.addProperty("isIronman", player.isIronman());
+		characterObj.addProperty("clanChat", player.getClanChat() != null ? player.getClanChat().owner : 0);
 		JsonObject positionObj = new JsonObject();
 		positionObj.addProperty("x", player.getPosition().getX());
 		positionObj.addProperty("y", player.getPosition().getY());
 		positionObj.addProperty("z", player.getPosition().getZ());
 		characterObj.add("position", positionObj);
 		JsonObject positionLastObj = new JsonObject();
-		positionLastObj.addProperty("x", player.getPosition().getLastX());
-		positionLastObj.addProperty("y", player.getPosition().getLastY());
-		positionLastObj.addProperty("z", player.getPosition().getLastZ());
+		positionLastObj.addProperty("x", player.getLastPosition().getX());
+		positionLastObj.addProperty("y", player.getLastPosition().getY());
+		positionLastObj.addProperty("z", player.getLastPosition().getZ());
 		characterObj.add("lastPosition", positionLastObj);
 		JsonObject appearanceObj = new JsonObject();
 		appearanceObj.addProperty("gender", player.getGender());
@@ -91,7 +97,7 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		itemDataObj.addProperty("claybracelet", player.getClayBraceletLife());
 		itemDataObj.addProperty("godbook", player.getGodBook());
 		itemDataObj.addProperty("lostgodbook", player.getLostGodBook());
-		itemDataObj.addProperty("usedFreeGauntletsCharge", player.usedFreeGauntletsCharge());
+		itemDataObj.addProperty("usedFreeGauntletsCharge", player.getQuestVars().usedFreeGauntletsCharge());
 		itemDataObj.addProperty("defender", player.getDefender());
 		itemDataObj.addProperty("dfsCharges", player.getDfsCharges());
 		JsonArray pouchArray = new JsonArray();
@@ -100,7 +106,7 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		}
 		itemDataObj.add("pouchData", pouchArray);
 		JsonArray puzzleArray = new JsonArray();
-        for(Item item : player.puzzleStoredItems) {
+        for(Item item : player.getPuzzle().puzzleStoredItems) {
                 int itemId = -1;
                 if(item != null){
                         itemId = item.getId();
@@ -114,7 +120,7 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		
 		JsonObject worldDataObj = new JsonObject();
 		worldDataObj.addProperty("coaltrucks", player.getCoalTruckAmount());
-		worldDataObj.addProperty("ectoGrinderBoneType", player.getEctofuntus().boneType.boneId);
+		worldDataObj.addProperty("ectoGrinderBoneType", player.getEctofuntus().boneType != null ? player.getEctofuntus().boneType.boneId : -1);
 		worldDataObj.addProperty("bonesInLoader", player.getEctofuntus().getBonesInLoader().size());
 		worldDataObj.addProperty("bonemealInBin", player.getEctofuntus().getBonemealInBin().size());
 		worldDataObj.addProperty("brimhavenOpen", player.isBrimhavenDungeonOpen());
@@ -149,13 +155,13 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		
 		JsonArray friendsArray = new JsonArray();
 		for (int i = 0; i < player.getFriends().length; i++) {
-			if(player.getFriends()[i] < 0L || player.getFriends()[i] >= 0x5b5b57f8a98a5dd1L)
+			if(player.getFriends()[i] < 0L || player.getFriends()[i] >= 0x7dcff8986ea31000L)
 				continue;
 			friendsArray.add(new JsonPrimitive(player.getFriends()[i]));
 		}
 		JsonArray ignoresArray = new JsonArray();
 		for (int i = 0; i < player.getIgnores().length; i++) {
-			if(player.getIgnores()[i] < 0L || player.getIgnores()[i] >= 0x5b5b57f8a98a5dd1L)
+			if(player.getIgnores()[i] < 0L || player.getIgnores()[i] >= 0x7dcff8986ea31000L)
 				continue;
 			ignoresArray.add(new JsonPrimitive(player.getIgnores()[i]));
 		}
@@ -246,24 +252,35 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		JsonObject questObj = new JsonObject();
 		questObj.addProperty("questpoints", player.getQuestPoints());
 		JsonObject questVarsObj = new JsonObject();
-		questVarsObj.addProperty("phoenixGang", player.isPhoenixGang());
-		questVarsObj.addProperty("blackArmGang", player.isBlackArmGang());
-		questVarsObj.addProperty("melzarsDoorUnlock", player.getMelzarsDoorUnlock());
-		questVarsObj.addProperty("bananaCrate", player.getBananaCrate());
-		questVarsObj.addProperty("bananaCrateCount", player.getBananaCrateCount());
+		questVarsObj.addProperty("phoenixGang", player.getQuestVars().isPhoenixGang());
+		questVarsObj.addProperty("blackArmGang", player.getQuestVars().isBlackArmGang());
+		questVarsObj.addProperty("melzarsDoorUnlock", player.getQuestVars().getMelzarsDoorUnlock());
+		questVarsObj.addProperty("bananaCrate", player.getQuestVars().getBananaCrate());
+		questVarsObj.addProperty("bananaCrateCount", player.getQuestVars().getBananaCrateCount());
 		questVarsObj.addProperty("ectoWorshipCount", player.getEctoWorshipCount());	
-		questVarsObj.addProperty("topHalfFlag", player.getTopHalfFlag());
-		questVarsObj.addProperty("bottomHalfFlag", player.getBottomHalfFlag());
-		questVarsObj.addProperty("skullFlag", player.getSkullFlag());
-		questVarsObj.addProperty("desiredTopHalfFlag", player.getDesiredTopHalfFlag());
-		questVarsObj.addProperty("desiredBottomHalfFlag", player.getDesiredBottomHalfFlag());
-		questVarsObj.addProperty("desiredSkullFlag", player.getDesiredSkullFlag());
-		questVarsObj.addProperty("petitionSigned", player.petitionSigned());
-		questVarsObj.addProperty("snailSlime", player.givenSnailSlime());
-		questVarsObj.addProperty("idPapers", player.givenIdPapers());
-		questVarsObj.addProperty("hasShotGrip", player.hasShotGrip());
-		questVarsObj.addProperty("ballistaIndex", player.getBallistaIndex());
-		questVarsObj.addProperty("gazeOfSaradomin", player.isGazeOfSaradomin());
+		questVarsObj.addProperty("topHalfFlag", player.getQuestVars().getTopHalfFlag());
+		questVarsObj.addProperty("bottomHalfFlag", player.getQuestVars().getBottomHalfFlag());
+		questVarsObj.addProperty("skullFlag", player.getQuestVars().getSkullFlag());
+		questVarsObj.addProperty("desiredTopHalfFlag", player.getQuestVars().getDesiredTopHalfFlag());
+		questVarsObj.addProperty("desiredBottomHalfFlag", player.getQuestVars().getDesiredBottomHalfFlag());
+		questVarsObj.addProperty("desiredSkullFlag", player.getQuestVars().getDesiredSkullFlag());
+		questVarsObj.addProperty("petitionSigned", player.getQuestVars().petitionSigned());
+		questVarsObj.addProperty("snailSlime", player.getQuestVars().givenSnailSlime());
+		questVarsObj.addProperty("idPapers", player.getQuestVars().givenIdPapers());
+		questVarsObj.addProperty("hasShotGrip", player.getQuestVars().hasShotGrip());
+		questVarsObj.addProperty("ballistaIndex", player.getQuestVars().getBallistaIndex());
+		questVarsObj.addProperty("gazeOfSaradomin", player.getQuestVars().isGazeOfSaradomin());
+		questVarsObj.addProperty("1stMortMyreBridge", player.getQuestVars().getMortMyreBridgeFixed(1));
+		questVarsObj.addProperty("2ndMortMyreBridge", player.getQuestVars().getMortMyreBridgeFixed(2));
+		questVarsObj.addProperty("3rdMortMyreBridge", player.getQuestVars().getMortMyreBridgeFixed(3));
+		questVarsObj.addProperty("canTeleArdy", player.getQuestVars().canTeleportArdougne());
+		questVarsObj.addProperty("vialChancy", player.getQuestVars().getVialGivenToChancy());
+		questVarsObj.addProperty("vialDaVinci", player.getQuestVars().getVialGivenToDaVinci());
+		questVarsObj.addProperty("vialHops", player.getQuestVars().getVialGivenToHops());
+		questVarsObj.addProperty("blackCog", player.getQuestVars().getBlackCogPlaced());
+		questVarsObj.addProperty("redCog", player.getQuestVars().getRedCogPlaced());
+		questVarsObj.addProperty("blueCog", player.getQuestVars().getBlueCogPlaced());
+		questVarsObj.addProperty("whiteCog", player.getQuestVars().getWhiteCogPlaced());
 		questObj.add("questVars", questVarsObj);
 		JsonObject monkeyMadnessVarsObj = new JsonObject();
 		if(player.getQuestStage(36) > 0) {
@@ -276,7 +293,7 @@ public class PlayerSaveSerialize implements JsonSerializer<Player> {
 		    monkeyMadnessVarsObj.addProperty("gotAmulet", player.getMMVars().gotAmulet());
 		    monkeyMadnessVarsObj.addProperty("gotTalisman", player.getMMVars().gotTalisman());
 		    monkeyMadnessVarsObj.addProperty("monkeyPetDeleted", player.getMMVars().monkeyPetDeleted);
-		    monkeyMadnessVarsObj.addProperty("recievedClue", player.getMMVars().recievedClueFromMonkey());
+		    monkeyMadnessVarsObj.addProperty("receivedClue", player.getMMVars().receivedClueFromMonkey());
 		    monkeyMadnessVarsObj.addProperty("trainingComplete", player.getMMVars().trainingComplete());
 		}
 		questObj.add("monkeyMadnessVars", monkeyMadnessVarsObj);

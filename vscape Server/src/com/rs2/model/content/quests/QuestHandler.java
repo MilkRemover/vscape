@@ -1,16 +1,17 @@
 package com.rs2.model.content.quests;
 
-import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
+import com.rs2.model.content.quests.impl.*;
+import com.rs2.model.content.quests.impl.ChristmasEvent.ChristmasEvent;
+import com.rs2.model.content.quests.impl.DeathPlateau.DeathPlateau;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.MonkeyMadness.MonkeyMadness;
+import com.rs2.model.content.quests.impl.UndergroundPass.UndergroundPass;
 import java.io.IOException;
 
 import com.rs2.model.players.CommandHandler;
 import com.rs2.model.players.Player;
 import com.rs2.util.PlayerSave;
 
-/**
- * @date 1-jun-2011
- * @author Satan666
- */
 public class QuestHandler {
 
     public static final int[] QUEST_IDS = {
@@ -60,7 +61,15 @@ public class QuestHandler {
 	new TreeGnomeVillage(),
 	new ChristmasEvent(),
 	new RecruitmentDrive(),
-	new MonkeyMadness()
+	new MonkeyMadness(),
+	new NatureSpirit(),
+	new InSearchOfTheMyreque(),
+	new PlagueCity(),
+	new Biohazard(),
+	new JunglePotion(),
+	new ClockTower(),
+	new DeathPlateau(),
+	new UndergroundPass()
     };
     
     public static void init() {
@@ -92,6 +101,7 @@ public class QuestHandler {
     }
     
     public static void initQuestLog(Player player){
+	CommandHandler.ClearNotes(player);
         player.sendQuestTab();
         for(Quest q : quests)
         {
@@ -110,11 +120,6 @@ public class QuestHandler {
     public static void startQuest(Player player, int questID) {
         Quest quest = quests[questID];
         if (quest == null) {
-            return;
-        }
-        if (!quest.canDoQuest(player)) {
-            player.getActionSender().removeInterfaces();
-            player.getActionSender().sendMessage("You can't do this quest yet.");
             return;
         }
         if (player.getQuestStage(quest.getQuestID()) == 0) {
@@ -141,7 +146,9 @@ public class QuestHandler {
             return;
         }
         resetInterface(player);
+	player.getActionSender().sendItemOnInterface(12145, 250, -1);
         quest.completeQuest(player);
+        PlayerSave.save(player);
     }
 
     public static boolean handleQuestButtons(Player player, int button) {
@@ -251,6 +258,30 @@ public class QuestHandler {
 		case 43124: //Monkey Madness
 			showInterface(player,quests[36]);
         		return true;
+		case 31201: //Nature Spirit
+			showInterface(player,quests[37]);
+        		return true;
+		case 46131: //In Search of the Myreque
+			showInterface(player,quests[38]);
+        		return true;
+		case 28204: //Plague City
+			showInterface(player,quests[39]);
+        		return true;
+		case 28184: //Biohazard
+			showInterface(player,quests[40]);
+        		return true;
+		case 28197: //Jungle Potion
+			showInterface(player,quests[41]);
+        		return true;
+		case 28185: //Clock Tower
+			showInterface(player,quests[42]);
+			return true;
+		case 32246: //Death Plateau
+			showInterface(player,quests[43]);
+        		return true;
+		case 38199:
+			//showInterface(player,quests[44]);
+        		return true;
         }
         return false;
     }
@@ -272,6 +303,15 @@ public class QuestHandler {
         for (int i = 0; i < QUEST_IDS.length; i++) {
             player.getActionSender().sendString("", QUEST_IDS[i]);
         }
+    }
+    
+    public static int getQuestId(final String name) {
+	    for(Quest q : QuestHandler.getQuests()) {
+		    if(q != null && q.getQuestName().equals(name)) {
+			    return q.getQuestID();
+		    }
+	    }
+	    return 0;
     }
 
 }

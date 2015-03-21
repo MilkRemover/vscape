@@ -1270,9 +1270,9 @@ public class SkillGuides {
 			menuLine("35", "Barbarian Outpost Agility Course", 1365, 5);// steel
 			// baxe
 			menuLine("40", "High-Level Agility Area Obstacles", 2996, 6);
-			menuLine("48", "Ape Atoll Agility Course", 4024, 7);// greegree
-			menuLine("52", "Wilderness Agility Course", 964, 8);// skull
-			menuLine("60", "Werewolf Agility Course", 6465, 9);// charos
+			menuLine("52", "Wilderness Agility Course", 964, 7);// skull
+			menuLine("60", "Werewolf Agility Course", 6465, 8);// charos
+			menuLine("65", "Ape Atoll Agility Course", 4024, 9);// greegree
 			optionTab("Agility", "Courses", "Courses", "Areas", "Shortcuts", "Milestones", "", "", "", "", "", "", "", "", "");
 		}
 
@@ -1364,7 +1364,7 @@ public class SkillGuides {
 			menuLine("26", "Energy potion (Harralander + Chocolate dust)", 3010, 4);
 			menuLine("30", "Defence potion (Ranarr + White Berries)", 133, 5);
 			menuLine("34", "Agility potion (Toadflax + Toad's legs)", 3034, 6);
-			menuLine("36", "Combat potion (Harralander + Ghost Horn Dust)", 9741, 7);
+			menuLine("36", "Combat potion (Harralander + Goat Horn Dust)", 9741, 7);
 			menuLine("38", "Prayer restore potion (Ranarr + Snape grass)", 139, 8);
 			menuLine("45", "Super Attack potion (Irit leaf + Eye of newt)", 145, 9);
 			menuLine("48", "Super anti-poison (Irit leaf + Unicorn horn dust)", 181, 10);
@@ -1375,8 +1375,8 @@ public class SkillGuides {
 			menuLine("63", "Restore(s) (Snapdragon + Red Spiders' eggs)", 3026, 15);
 			menuLine("66", "Super Defence (Cadantine + White berries)", 163, 16);
 			menuLine("68", "Antidote(+) (C. Milk + Toadflax + Yew roots)", 5945, 17);
-			menuLine("69", "Ranging potion (Dwarf weed + Wine of Zamorak)", 169, 18);
-			menuLine("72", "Antifire potion (Lantadyme + Blue dragon scale)", 2454, 19);
+			menuLine("69", "Antifire potion (Lantadyme + Blue dragon scale)", 2454, 18);
+			menuLine("72", "Ranging potion (Dwarf weed + Wine of Zamorak)", 169, 19);
 			menuLine("73", "Weapon(+) (C.Milk + Cactus spine + R.Spiders' egg)", 5937, 20);
 			menuLine("76", "Magic potion (Lantadyme + Potato cactus)", 3042, 21);
 			menuLine("78", "Zamorak brew (Torstol + Jangerberries)", 189, 22);

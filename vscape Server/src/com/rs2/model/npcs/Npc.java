@@ -9,8 +9,8 @@ import com.rs2.model.content.combat.AttackType;
 import com.rs2.model.content.combat.CombatScript;
 import com.rs2.model.content.combat.util.RingEffect;
 import com.rs2.model.content.dungeons.Abyss;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs.ApeAtollNpcData;
+import com.rs2.model.content.quests.impl.HorrorFromTheDeep;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtollNpcs.ApeAtollNpcData;
 import com.rs2.model.content.randomevents.EventsConstants;
 import com.rs2.model.content.treasuretrails.ClueScroll;
 import com.rs2.model.content.treasuretrails.KeyToClue;
@@ -23,6 +23,7 @@ import com.rs2.model.tick.CycleEvent;
 import com.rs2.model.tick.CycleEventContainer;
 import com.rs2.model.tick.CycleEventHandler;
 import com.rs2.util.Misc;
+import com.rs2.util.clip.ClippedPathFinder;
 
 /**
  * A non-player-character.
@@ -51,18 +52,13 @@ public class Npc extends Entity {
 	private boolean pet = false;
 	private int ownerIndex;
 	private int hpRenewalTimer;
+	public boolean walkingBackToSpawn = false;
 
 	private NpcCombatDef npcCombatDef;
 
 	private static int AMOUNT_NPCS_ADDED = 0;
 
 	public static int[] npcsTransformOnAggression = {1266, 1268, 2453, 2886, 2890, 1024, 1025, 1026, 1027, 1028, 1029};
-
-	public static int[] npcsDontWalk = {1266, 1268, 2453, 2886, 2890, 1827, 2892, 2894, 2896, 1532, 1533, 1534, 1535};
-
-	public static int[] npcsDontFollow = {1827, 2892, 2894, 2896, 1532, 1533, 1534, 1535};
-
-	public static int[] npcsDontAttack = {2440, 2443, 2446, 6142, 6143, 6144, 6145, 3782, 1532, 1533, 1534, 1535};
 
 	/**
 	 * Creates a new Npc.
@@ -121,11 +117,13 @@ public class Npc extends Entity {
 	}
 
 	public void restoreHp() {
-		if (hpRenewalTimer < 1 && !isDead()) {
-			heal(1);
-			hpRenewalTimer = 100;
-		} else {
-			hpRenewalTimer--;
+		if(getCurrentHp() < getMaxHp()) {
+			if (hpRenewalTimer < 1 && !isDead()) {
+				heal(1);
+				hpRenewalTimer = 100;
+			} else {
+				hpRenewalTimer--;
+			}
 		}
 	}
 
@@ -227,28 +225,69 @@ public class Npc extends Entity {
 	 * Makes walkable npcs walk, then updates it's position.
 	 */
 	public void npcRandomWalk() {
-		if (this == null || isAttacking() || isDead() || getFollowingEntity() != null || getInteractingEntity() != null || getCombatingEntity() != null)
+		if (this == null || !isVisible() || isAttacking() || isDead() || getFollowingEntity() != null || getInteractingEntity() != null || getCombatingEntity() != null || this.isMoving())
 			return;
 		if (isDontWalk() || ApeAtollNpcData.forNpcId(this.getNpcId()) != null) {
 			return;
 		}
+		if(!playerNearby() && npcId != 1091)
+		{
+			return;
+		}
 		if (getWalkType() == WalkType.STAND) {
 			getUpdateFlags().sendFaceToDirection(getFacingDirection(getPosition(), getFace()));
-		} else if (!isFrozen() && !isStunned() && Misc.random(9) == 0) {
+		} else if (!isFrozen() && !isStunned() && Misc.random(npcId == 1091 ? 5 : 9) == 0) {
 			int x = minWalk.getX(), y = minWalk.getY(), width = maxWalk.getX()-minWalk.getX(), length = maxWalk.getY()-minWalk.getY();
+			if(npcId == 1091) {
+				x = getPosition().getX() - 8;
+				y = getPosition().getY() - 8;
+				width = 16;
+				length = 16;
+			}
 			int x1 = Misc.getRandom().nextInt(width), y1 = Misc.getRandom().nextInt(length);
 			Position position = new Position(x+x1, y+y1, getPosition().getZ());
-			walkTo(position, true);
+			if(npcId == 1091) {
+				this.setSpawnPosition(position);
+			}
+			if(npcId == 1091) {
+				ClippedPathFinder.getPathFinder().findRoute(this, position.getX(), position.getY(), true, 0, 0);
+			} else {
+				walkTo(position, true);
+			}
 		}
+	}
+	
+	public boolean canHaveInteractingEntity() {
+		int id = this.npcId;
+		return !this.isBoothBanker() && id != HorrorFromTheDeep.SITTING_JOSSIK && id != 1423 && id != 1424 && id != 1577
+			&& id < 1066 && id > 1068 && id != 1063 && id != 1064 && id != 1061 && id != 1069;
+	}
+
+	public boolean playerNearby() {
+        synchronized (World.getPlayers()) {
+        	if(World.getPlayers().length <= 0)
+        	{
+        		return false;
+        	}
+        	final Player[] players = World.getPlayers();
+            for (Player p : players) {
+	            if (p == null)
+	            	continue;
+	            
+	            if(isVisible() && getPosition().isViewableFrom(p.getPosition()) && getPosition().getZ() == p.getPosition().getZ()){
+	            	return true;
+	            }
+	        }
+        }
+        return false;
 	}
 
 	public void ownerCheck() {
-		//DEADCODE
-	/*	if (this == null) {
-			return;
-		}*/
 		if (getPlayerIndex() > 0) {
-			if (!this.isDead() && (getPlayerOwner() == null || !Misc.goodDistance(getPosition(), getPlayerOwner().getPosition(), 15))) {
+			if(this.getNpcId() == 1472) {
+			    return;
+			}
+			if (!isDead() && (getPlayerOwner() == null || !Misc.goodDistance(getPosition(), getPlayerOwner().getPosition(), 15))) {
 				NpcLoader.destroyNpc(this);
 			}
 			return;
@@ -332,6 +371,10 @@ public class Npc extends Entity {
 	}
 
 	public Player getPlayerOwner() {
+		if(ownerIndex < 0 || ownerIndex > World.getPlayers().length)
+		{
+			return null;
+		}
 		return World.getPlayers()[ownerIndex];
 	}
 
@@ -501,12 +544,21 @@ public class Npc extends Entity {
 		}
 		for (Item item : drops.getDrops()) {
 		    if (item != null) {
-			String itemName = item.getDefinition().getName().toLowerCase();
-			if (killer.isPlayer() && itemName.contains("clue") || ((Player) killer).hasPouchDrop(item.getId())) {
-			    return;
-			}
-			GroundItem drop = new GroundItem(new Item(item.getId(), item.getCount() < 1 ? 1 : item.getCount()), this, killer, getDeathPosition());
-			GroundItemManager.getManager().dropItem(drop);
+				String itemName = item.getDefinition().getName().toLowerCase();
+				if (killer.isPlayer() && (itemName.contains("clue") || ((Player) killer).hasPouchDrop(item.getId()))) {
+				    return;
+				}
+				if(item.getCount() > 1 && !item.getDefinition().isNoted() && !item.getDefinition().isStackable())
+				{
+					for(int i = 0; i < item.getCount(); i++)
+					{
+						GroundItem drop = new GroundItem(new Item(item.getId(), 1), this, killer, getDeathPosition());
+						GroundItemManager.getManager().dropItem(drop);
+					}
+				}else{
+					GroundItem drop = new GroundItem(new Item(item.getId(), item.getCount() < 1 ? 1 : item.getCount()), this, killer, getDeathPosition());
+					GroundItemManager.getManager().dropItem(drop);
+				}
 		    }
 		}
 		if (killer.isPlayer()) {
@@ -568,10 +620,13 @@ public class Npc extends Entity {
 	}
 
 	public void handleTransformTick() {
-		if (getTransformTimer() > 0 && getTransformTimer() < 999999) {
-			setTransformTimer(getTransformTimer() - 1);
-			if (getTransformTimer() < 1) {
-				sendTransform(getOriginalNpcId(), 0);
+		if(getNpcId() != getOriginalNpcId())
+		{
+			if (getTransformTimer() > 0 && getTransformTimer() < 999999) {
+				setTransformTimer(getTransformTimer() - 1);
+				if (getTransformTimer() < 1) {
+					sendTransform(getOriginalNpcId(), 0);
+				}
 			}
 		}
 	}

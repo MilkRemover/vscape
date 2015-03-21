@@ -18,6 +18,7 @@ public class DialogueManager {
     private int dialogueId;
     private int chatId;
     private int lastNpcTalk;
+    public String[] tempStrings;
 	/**
 	 * @param chatId the chatId to set
 	 */
@@ -135,6 +136,9 @@ public class DialogueManager {
 		player.getActionSender().sendString(option1, 2461);
 		player.getActionSender().sendString(option2, 2462);
 		player.getActionSender().sendChatInterface(2459);
+		tempStrings = new String[2];
+		tempStrings[0] = option1;
+		tempStrings[1] = option2;
 	}
 
 	public void sendOption(String option1, String option2, String option3) {
@@ -142,6 +146,10 @@ public class DialogueManager {
 		player.getActionSender().sendString(option2, 2472);
 		player.getActionSender().sendString(option3, 2473);
 		player.getActionSender().sendChatInterface(2469);
+		tempStrings = new String[3];
+		tempStrings[0] = option1;
+		tempStrings[1] = option2;
+		tempStrings[2] = option3;
 	}
 
 	public void sendOption(String option1, String option2, String option3, String option4) {
@@ -150,6 +158,11 @@ public class DialogueManager {
 		player.getActionSender().sendString(option3, 2484);
 		player.getActionSender().sendString(option4, 2485);
 		player.getActionSender().sendChatInterface(2480);
+		tempStrings = new String[4];
+		tempStrings[0] = option1;
+		tempStrings[1] = option2;
+		tempStrings[2] = option3;
+		tempStrings[3] = option4;
 	}
 
 	public void sendOption(String option1, String option2, String option3, String option4, String option5) {
@@ -159,9 +172,16 @@ public class DialogueManager {
 		player.getActionSender().sendString(option4, 2497);
 		player.getActionSender().sendString(option5, 2498);
 		player.getActionSender().sendChatInterface(2492);
+		tempStrings = new String[5];
+		tempStrings[0] = option1;
+		tempStrings[1] = option2;
+		tempStrings[2] = option3;
+		tempStrings[3] = option4;
+		tempStrings[4] = option5;
 	}
 
 	public void sendOption(String[] string) {
+		tempStrings = string;
 		switch (string.length) {
 			case 2 :
 				sendOption(string[0], string[1]);
@@ -314,6 +334,17 @@ public class DialogueManager {
 		player.getActionSender().sendNPCDialogueHead(id, 4883);
 		player.getActionSender().sendChatInterface(4882);
 	}
+	
+	public void sendNpcChat(String line1) {
+		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
+		NpcDefinition def = World.getDefinitions()[id];
+		String npcName = def.getName();
+		player.getActionSender().sendInterfaceAnimation(4883, Dialogues.CONTENT);
+		player.getActionSender().sendString(npcName, 4884);
+		player.getActionSender().sendString(line1, 4885);
+		player.getActionSender().sendNPCDialogueHead(id, 4883);
+		player.getActionSender().sendChatInterface(4882);
+	}
 
 	public void sendNpcChat(String line1, String line2, int emotion) {
 		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
@@ -326,12 +357,37 @@ public class DialogueManager {
 		player.getActionSender().sendNPCDialogueHead(id, 4888);
 		player.getActionSender().sendChatInterface(4887);
 	}
+	
+	public void sendNpcChat(String line1, String line2) {
+		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
+		NpcDefinition def = World.getDefinitions()[id];
+		String npcName = def.getName();
+		player.getActionSender().sendInterfaceAnimation(4888, Dialogues.CONTENT);
+		player.getActionSender().sendString(npcName, 4889);
+		player.getActionSender().sendString(line1, 4890);
+		player.getActionSender().sendString(line2, 4891);
+		player.getActionSender().sendNPCDialogueHead(id, 4888);
+		player.getActionSender().sendChatInterface(4887);
+	}
 
 	public void sendNpcChat(String line1, String line2, String line3, int emotion) {
 		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
 		NpcDefinition def = World.getDefinitions()[id];
 		String npcName = def.getName();
 		player.getActionSender().sendInterfaceAnimation(4894, emotion);
+		player.getActionSender().sendString(npcName, 4895);
+		player.getActionSender().sendString(line1, 4896);
+		player.getActionSender().sendString(line2, 4897);
+		player.getActionSender().sendString(line3, 4898);
+		player.getActionSender().sendNPCDialogueHead(id, 4894);
+		player.getActionSender().sendChatInterface(4893);
+	}
+	
+	public void sendNpcChat(String line1, String line2, String line3) {
+		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
+		NpcDefinition def = World.getDefinitions()[id];
+		String npcName = def.getName();
+		player.getActionSender().sendInterfaceAnimation(4894, Dialogues.CONTENT);
 		player.getActionSender().sendString(npcName, 4895);
 		player.getActionSender().sendString(line1, 4896);
 		player.getActionSender().sendString(line2, 4897);
@@ -353,11 +409,36 @@ public class DialogueManager {
 		player.getActionSender().sendNPCDialogueHead(id, 4901);
 		player.getActionSender().sendChatInterface(4900);
 	}
+	
+	public void sendNpcChat(String line1, String line2, String line3, String line4) {
+		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
+		NpcDefinition def = World.getDefinitions()[id];
+		String npcName = def.getName();
+		player.getActionSender().sendInterfaceAnimation(4901, Dialogues.CONTENT);
+		player.getActionSender().sendString(npcName, 4902);
+		player.getActionSender().sendString(line1, 4903);
+		player.getActionSender().sendString(line2, 4904);
+		player.getActionSender().sendString(line3, 4905);
+		player.getActionSender().sendString(line4, 4906);
+		player.getActionSender().sendNPCDialogueHead(id, 4901);
+		player.getActionSender().sendChatInterface(4900);
+	}
 
 	/**
 	 * Timed NPC dialogue. These NPC dialogues have no close/click options, so
 	 * should only be used with a timer.
 	 */
+	public void sendTimedNpcChat(String line1, int emotion) {
+		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
+		NpcDefinition def = World.getDefinitions()[id];
+		String npcName = def.getName();
+		player.getActionSender().sendInterfaceAnimation(12379, emotion);
+		player.getActionSender().sendString(npcName, 12380);
+		player.getActionSender().sendString(line1, 12381);
+		player.getActionSender().sendNPCDialogueHead(id, 12379);
+		player.getActionSender().sendChatInterface(12378);
+	}
+	
 	public void sendTimedNpcChat(String line1, String line2, int emotion) {
 		int id = getLastNpcTalk() < 0 || getLastNpcTalk() > Constants.MAX_NPC_ID ? 0 : getLastNpcTalk();
 		NpcDefinition def = World.getDefinitions()[id];
@@ -407,9 +488,26 @@ public class DialogueManager {
 		player.getActionSender().sendPlayerDialogueHead(969);
 		player.getActionSender().sendChatInterface(968);
 	}
+	
+	public void sendPlayerChat(String line1) {
+		player.getActionSender().sendInterfaceAnimation(969, Dialogues.CONTENT);
+		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 970);
+		player.getActionSender().sendString(line1, 971);
+		player.getActionSender().sendPlayerDialogueHead(969);
+		player.getActionSender().sendChatInterface(968);
+	}
 
 	public void sendPlayerChat(String line1, String line2, int emotion) {
 		player.getActionSender().sendInterfaceAnimation(974, emotion);
+		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 975);
+		player.getActionSender().sendString(line1, 976);
+		player.getActionSender().sendString(line2, 977);
+		player.getActionSender().sendPlayerDialogueHead(974);
+		player.getActionSender().sendChatInterface(973);
+	}
+	
+	public void sendPlayerChat(String line1, String line2) {
+		player.getActionSender().sendInterfaceAnimation(974, Dialogues.CONTENT);
 		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 975);
 		player.getActionSender().sendString(line1, 976);
 		player.getActionSender().sendString(line2, 977);
@@ -426,9 +524,30 @@ public class DialogueManager {
 		player.getActionSender().sendPlayerDialogueHead(980);
 		player.getActionSender().sendChatInterface(979);
 	}
+	
+	public void sendPlayerChat(String line1, String line2, String line3) {
+		player.getActionSender().sendInterfaceAnimation(980, Dialogues.CONTENT);
+		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 981);
+		player.getActionSender().sendString(line1, 982);
+		player.getActionSender().sendString(line2, 983);
+		player.getActionSender().sendString(line3, 984);
+		player.getActionSender().sendPlayerDialogueHead(980);
+		player.getActionSender().sendChatInterface(979);
+	}
 
 	public void sendPlayerChat(String line1, String line2, String line3, String line4, int emotion) {
 		player.getActionSender().sendInterfaceAnimation(987, emotion);
+		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 988);
+		player.getActionSender().sendString(line1, 989);
+		player.getActionSender().sendString(line2, 990);
+		player.getActionSender().sendString(line3, 991);
+		player.getActionSender().sendString(line4, 992);
+		player.getActionSender().sendPlayerDialogueHead(987);
+		player.getActionSender().sendChatInterface(986);
+	}
+	
+	public void sendPlayerChat(String line1, String line2, String line3, String line4) {
+		player.getActionSender().sendInterfaceAnimation(987, Dialogues.CONTENT);
 		player.getActionSender().sendString(Misc.formatPlayerName(player.getUsername()), 988);
 		player.getActionSender().sendString(line1, 989);
 		player.getActionSender().sendString(line2, 990);
@@ -517,6 +636,22 @@ public class DialogueManager {
 		player.getActionSender().sendString(text2, 6233);
 		player.getActionSender().sendItemOnInterface(6235, 170, item1.getId());
 		player.getActionSender().sendItemOnInterface(6236, 170, item2.getId());
+		player.getActionSender().sendChatInterface(6231);
+	}
+	
+	public void sendGiveItemNpc(String text1, Item item1, Item item2) {
+		player.getActionSender().sendString(text1, 6232);
+		player.getActionSender().sendString("", 6233);
+		player.getActionSender().sendItemOnInterface(6235, 170, item1.getId());
+		player.getActionSender().sendItemOnInterface(6236, 170, item2.getId());
+		player.getActionSender().sendChatInterface(6231);
+	}
+	
+	public void sendGiveItemNpc(String text1, String text2, Item item1) {
+		player.getActionSender().sendString(text1, 6232);
+		player.getActionSender().sendString(text2, 6233);
+		player.getActionSender().sendItemOnInterface(6236, 170, item1.getId());
+		player.getActionSender().sendItemOnInterface(6235, 170, -1);
 		player.getActionSender().sendChatInterface(6231);
 	}
 

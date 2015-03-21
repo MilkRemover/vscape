@@ -17,13 +17,15 @@ import com.rs2.model.content.combat.effect.impl.PoisonEffect;
 import com.rs2.model.content.combat.hit.Hit;
 import com.rs2.model.content.combat.hit.HitDef;
 import com.rs2.model.content.combat.hit.HitType;
-import com.rs2.model.content.quests.Quest;
+
 import com.rs2.model.content.quests.QuestHandler;
+import com.rs2.model.content.quests.impl.Quest;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.content.skills.prayer.Ectofuntus;
 import com.rs2.model.content.treasuretrails.ClueScroll;
 import com.rs2.model.players.Player.BankOptions;
 import com.rs2.model.players.bank.BankManager;
+import com.rs2.model.players.clanchat.ClanChatHandler;
 import com.rs2.model.players.Player;
 import com.rs2.model.players.item.Item;
 
@@ -58,12 +60,22 @@ public class PlayerSaveParser {
 	            }
 	            player.setPassword(password);
 	            player.setStaffRights(characterObj.get("rights").getAsInt());
+	            if(characterObj.get("lastseen") != null)
+	            {
+	            	player.setTimeLoggedOut(characterObj.get("lastseen").getAsString());
+	            }
                 player.setMuteExpire(characterObj.get("muteExpire").getAsLong());
                 player.setBanExpire(characterObj.get("banExpire").getAsLong());
                 if(characterObj.get("inJail") != null)
                 {
                 	player.setInJail(characterObj.get("inJail").getAsBoolean());
                 }
+				if(characterObj.get("isIronman") != null) {
+					player.setIronman(characterObj.get("isIronman").getAsBoolean());
+				}
+				if(characterObj.get("clanChat") != null) {
+					player.setClanChat(ClanChatHandler.getClanChat(characterObj.get("clanChat").getAsLong()));
+				}
 	            JsonObject position = characterObj.getAsJsonObject("position");
 	            if(position != null){
 	            player.getPosition().setX(position.get("x") != null ? position.get("x").getAsInt() : Constants.START_X);
@@ -74,9 +86,9 @@ public class PlayerSaveParser {
 	            }
 	            JsonObject positionLast = characterObj.getAsJsonObject("lastPosition");
 	            if(positionLast != null){
-	            player.getPosition().setLastX(positionLast.get("x") != null ? positionLast.get("x").getAsInt() : Constants.START_X);
-	            player.getPosition().setLastY(positionLast.get("y") != null ? positionLast.get("y").getAsInt() : Constants.START_Y);
-	            player.getPosition().setLastZ(positionLast.get("z") != null ? positionLast.get("z").getAsInt() : Constants.START_Z);
+	            	player.getLastPosition().setX(positionLast.get("x") != null ? positionLast.get("x").getAsInt() : Constants.START_X);
+	            	player.getLastPosition().setY(positionLast.get("y") != null ? positionLast.get("y").getAsInt() : Constants.START_Y);
+	            	player.getLastPosition().setZ(positionLast.get("z") != null ? positionLast.get("z").getAsInt() : Constants.START_Z);
 	            }
 	            JsonObject appearance = characterObj.getAsJsonObject("appearance");
 	            if(appearance != null) {
@@ -157,7 +169,7 @@ public class PlayerSaveParser {
 		        	if(itemData.get("lostgodbook") != null){
 		        		player.setLostGodBook(itemData.get("lostgodbook").getAsInt());
 		        	}
-	                player.setHasUsedFreeGauntletsCharge(itemData.get("usedFreeGauntletsCharge").getAsBoolean());
+	                player.getQuestVars().setHasUsedFreeGauntletsCharge(itemData.get("usedFreeGauntletsCharge").getAsBoolean());
 	                player.setDefender(itemData.get("defender").getAsInt());
 	                player.setDfsCharges(itemData.get("dfsCharges").getAsInt());
 	                JsonArray pouchData = itemData.getAsJsonArray("pouchData");
@@ -173,7 +185,7 @@ public class PlayerSaveParser {
 					    for (int i = 0; i < ClueScroll.PUZZLE_LENGTH; i++) {
 							if(i >= puzzleStoredItems.size())
 								break;
-					    	player.puzzleStoredItems[i] = new Item(puzzleStoredItems.get(i).getAsInt());
+					    	player.getPuzzle().puzzleStoredItems[i] = new Item(puzzleStoredItems.get(i).getAsInt());
 					    }
 					}
 					if(itemData.get("recieveMasks") != null)
@@ -243,7 +255,7 @@ public class PlayerSaveParser {
 						if(i >= friends.size())
 							break;
 						long friendLong = friends.get(i).getAsLong();
-						if(friendLong < 0L || friendLong >= 0x5b5b57f8a98a5dd1L)
+						if(friendLong < 0L || friendLong >= 0x7dcff8986ea31000L)
 							continue;
 						if(!player.getFriendsConverted()){
 							friendLong = NameUtil.nameToLong(NameUtil.longToNameOld(friends.get(i).getAsLong()));
@@ -264,7 +276,7 @@ public class PlayerSaveParser {
 						if(i >= ignores.size())
 							break;
 						long ignoreLong = ignores.get(i).getAsLong();
-						if(ignoreLong < 0L || ignoreLong >= 0x5b5b57f8a98a5dd1L)
+						if(ignoreLong < 0L || ignoreLong >= 0x7dcff8986ea31000L)
 							continue;
 						if(!player.getIgnoresConverted()){
 							ignoreLong = NameUtil.nameToLong(NameUtil.longToNameOld(ignores.get(i).getAsLong()));
@@ -398,29 +410,62 @@ public class PlayerSaveParser {
 		            player.setQuestPoints(quests.get("questpoints").getAsInt());
 		            JsonObject questVars = quests.getAsJsonObject("questVars");
 		            if(questVars != null) {
-			            player.joinPhoenixGang(questVars.get("phoenixGang").getAsBoolean());
-			            player.joinBlackArmGang(questVars.get("blackArmGang").getAsBoolean());
-			            player.setMelzarsDoorUnlock(questVars.get("melzarsDoorUnlock").getAsBoolean());
-		            	player.setBananaCrate(questVars.get("bananaCrate").getAsBoolean());
-		            	player.setBananaCrateCount(questVars.get("bananaCrateCount").getAsInt());
-		            	player.setEctoWorshipCount(questVars.get("ectoWorshipCount").getAsInt());
-		            	player.dyeGhostsAhoyFlag("top", questVars.get("topHalfFlag").getAsString());
-		            	player.dyeGhostsAhoyFlag("bottom", questVars.get("bottomHalfFlag").getAsString());
-		            	player.dyeGhostsAhoyFlag("skull", questVars.get("skullFlag").getAsString());
-			    		player.setDesiredGhostsAhoyFlag("top", questVars.get("desiredTopHalfFlag").getAsString());
-			    		player.setDesiredGhostsAhoyFlag("bottom", questVars.get("desiredBottomHalfFlag").getAsString());
-			    		player.setDesiredGhostsAhoyFlag("top", questVars.get("desiredSkullFlag").getAsString());
-		            	player.setPetitionSigned(questVars.get("petitionSigned").getAsBoolean());
-		            	player.setGivenSnailSlime(questVars.get("snailSlime").getAsBoolean());
-		            	player.setGivenIdPapers(questVars.get("idPapers").getAsBoolean());
+			            player.getQuestVars().joinPhoenixGang(questVars.get("phoenixGang").getAsBoolean());
+			            player.getQuestVars().joinBlackArmGang(questVars.get("blackArmGang").getAsBoolean());
+			            player.getQuestVars().setMelzarsDoorUnlock(questVars.get("melzarsDoorUnlock").getAsBoolean());
+				    player.getQuestVars().setBananaCrate(questVars.get("bananaCrate").getAsBoolean());
+				    player.getQuestVars().setBananaCrateCount(questVars.get("bananaCrateCount").getAsInt());
+				    player.setEctoWorshipCount(questVars.get("ectoWorshipCount").getAsInt());
+				    player.getQuestVars().dyeGhostsAhoyFlag("top", questVars.get("topHalfFlag").getAsString());
+				    player.getQuestVars().dyeGhostsAhoyFlag("bottom", questVars.get("bottomHalfFlag").getAsString());
+				    player.getQuestVars().dyeGhostsAhoyFlag("skull", questVars.get("skullFlag").getAsString());
+				    player.getQuestVars().setDesiredGhostsAhoyFlag("top", questVars.get("desiredTopHalfFlag").getAsString());
+				    player.getQuestVars().setDesiredGhostsAhoyFlag("bottom", questVars.get("desiredBottomHalfFlag").getAsString());
+				    player.getQuestVars().setDesiredGhostsAhoyFlag("top", questVars.get("desiredSkullFlag").getAsString());
+				    player.getQuestVars().setPetitionSigned(questVars.get("petitionSigned").getAsBoolean());
+				    player.getQuestVars().setGivenSnailSlime(questVars.get("snailSlime").getAsBoolean());
+				    player.getQuestVars().setGivenIdPapers(questVars.get("idPapers").getAsBoolean());
 		            	if(questVars.get("hasShotGrip") != null){
-		            		player.setShotGrip(questVars.get("hasShotGrip").getAsBoolean());
+		            		player.getQuestVars().setShotGrip(questVars.get("hasShotGrip").getAsBoolean());
 		            	}
 				if(questVars.get("ballistaIndex") != null){
-		            		player.setBallistaIndex(questVars.get("ballistaIndex").getAsInt());
+		            		player.getQuestVars().setBallistaIndex(questVars.get("ballistaIndex").getAsInt());
 		            	}
 				if(questVars.get("gazeOfSaradomin") != null) {
-					player.setGazeOfSaradomin(questVars.get("gazeOfSaradomin").getAsBoolean());
+					player.getQuestVars().setGazeOfSaradomin(questVars.get("gazeOfSaradomin").getAsBoolean());
+				}
+				if(questVars.get("1stMortMyreBridge") != null) {
+					player.getQuestVars().setMortMyreBridgeFixed(1, questVars.get("1stMortMyreBridge").getAsBoolean());
+				}
+				if(questVars.get("2ndMortMyreBridge") != null) {
+					player.getQuestVars().setMortMyreBridgeFixed(2, questVars.get("2ndMortMyreBridge").getAsBoolean());
+				}
+				if(questVars.get("3rdMortMyreBridge") != null) {
+					player.getQuestVars().setMortMyreBridgeFixed(3, questVars.get("3rdMortMyreBridge").getAsBoolean());
+				}
+				if(questVars.get("canTeleArdy") != null) {
+					player.getQuestVars().setCanTeleportArdougne(questVars.get("canTeleArdy").getAsBoolean());
+				}
+				if(questVars.get("vialChancy") != null) {
+					player.getQuestVars().setVialGivenToChancy(questVars.get("vialChancy").getAsInt());
+				}
+				if(questVars.get("vialDaVinci") != null) {
+					player.getQuestVars().setVialGivenToDaVinci(questVars.get("vialDaVinci").getAsInt());
+				}
+				if(questVars.get("vialHops") != null) {
+					player.getQuestVars().setVialGivenToHops(questVars.get("vialHops").getAsInt());
+				}
+				if(questVars.get("blackCog") != null) {
+					player.getQuestVars().setBlackCogPlaced(questVars.get("blackCog").getAsBoolean());
+				}
+				if(questVars.get("redCog") != null) {
+					player.getQuestVars().setRedCogPlaced(questVars.get("redCog").getAsBoolean());
+				}
+				if(questVars.get("blueCog") != null) {
+					player.getQuestVars().setBlueCogPlaced(questVars.get("blueCog").getAsBoolean());
+				}
+				if(questVars.get("whiteCog") != null) {
+					player.getQuestVars().setWhiteCogPlaced(questVars.get("whiteCog").getAsBoolean());
 				}
 		            }
 			    JsonObject MMVars = quests.getAsJsonObject("monkeyMadnessVars");
@@ -455,8 +500,8 @@ public class PlayerSaveParser {
 				    if(MMVars.get("trainingComplete") != null) {
 					player.getMMVars().setTrainingComplete(MMVars.get("trainingComplete").getAsBoolean());
 				    }
-				    if(MMVars.get("recievedClue") != null) {
-					player.getMMVars().setRecievedClueFromMonkey(MMVars.get("recievedClue").getAsBoolean());
+				    if(MMVars.get("receivedClue") != null) {
+					player.getMMVars().setRecievedClueFromMonkey(MMVars.get("receivedClue").getAsBoolean());
 				    }
 				}
 	            	JsonArray questData = quests.getAsJsonArray("questData");

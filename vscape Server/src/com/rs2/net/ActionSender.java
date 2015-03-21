@@ -4,6 +4,8 @@ import com.rs2.Constants;
 import com.rs2.cache.object.CacheObject;
 import com.rs2.cache.object.ObjectLoader;
 import com.rs2.model.Graphic;
+import com.rs2.model.Palette;
+import com.rs2.model.Palette.PaletteTile;
 import com.rs2.model.Position;
 import com.rs2.model.World;
 import com.rs2.model.content.skills.magic.Spell;
@@ -60,7 +62,7 @@ public class ActionSender {
 	}
 
 	public void sendSideBarInterfaces() {
-		int[] sidebars = { 2423, 3917, 638, 3213, 1644, 5608, 0, -1, 5065,
+		int[] sidebars = { 2423, 3917, 638, 3213, 1644, 5608, 0, 25000, 5065,
 				5715, 2449, 904, 147, 962 };
 		for (int i = 0; i < sidebars.length; i++) {
 			sendSidebarInterface(i, sidebars[i]);
@@ -71,7 +73,7 @@ public class ActionSender {
 	}
 
 	public void enableSideBarInterfaces(int[] listSideBar) {
-		int[] sidebars = { 2423, 3917, 638, 3213, 1644, 5608, 1151, -1, 5065,
+		int[] sidebars = { 2423, 3917, 638, 3213, 1644, 5608, 1151, 25000, 5065,
 				5715, 2449, 904, 147, 962 };
 		for (int i = 0; i < listSideBar.length; i++) {
 			sendSidebarInterface(listSideBar[i], sidebars[listSideBar[i]]);
@@ -107,8 +109,7 @@ public class ActionSender {
         }
 		player.getPrivateMessaging().sendPMOnLogin();
 		sendIgnoreList(player.getIgnores());
-		sendMessage("Welcome to /v/scape. There are currently " + World.playerAmount() + " players online.");
-		sendMessage("Before you ask a question, check ::info and/or ::patchnotes.");
+		sendConfig(674, 0);
 		//QPEdit(player.getQuestPoints());
 		return this;
 	}
@@ -133,6 +134,7 @@ public class ActionSender {
 		sendConfig(427, player.isAcceptingAid() ? 1 : 0);// acceptAid
 		sendConfig(115, player.isWithdrawAsNote() ? 1 : 0); // withdrawItemAsNote
 		sendConfig(304,player.getBankOptions().equals(BankOptions.SWAP_ITEM) ? 0 : 1);// swapItem
+		sendConfig(667, (player.getQuestStage(39) >= 5 ? 36 : 0));
 		return this;
 	}
 
@@ -452,9 +454,7 @@ public class ActionSender {
 		player.send(out.getBuffer());
 		return this;
 	}
-
-	public ActionSender sendObject(int id, int x, int y, int h, int face,
-			int type) {
+	public ActionSender sendObject(int id, int x, int y, int h, int face, int type) {
 		sendCoords(new Position(x, y, h));
 		sendObjectType(face, type);
 		if (id != -1) {
@@ -476,19 +476,24 @@ public class ActionSender {
 		player.send(out.getBuffer());
 		return this;
 	}
-
-	public ActionSender sendMessage(String message) {
+	
+	public ActionSender sendMessage(String message, boolean isFiltered) {
 		if (player.getNewComersSide().isInTutorialIslandStage()) {
 			player.getDialogue().sendStatement(message);
 			player.setClickId(0);
 		}
 		StreamBuffer.OutBuffer out = StreamBuffer
-				.newOutBuffer(message.length() + 3);
+				.newOutBuffer(message.length() + 4);
 		out.writeVariablePacketHeader(player.getEncryptor(), 253);
 		out.writeString(message);
+		out.writeByte(isFiltered == true ? 1 : 0);
 		out.finishVariablePacketHeader();
 		player.send(out.getBuffer());
 		return this;
+	}
+
+	public void sendMessage(String message) {
+		sendMessage(message, false);
 	}
 
 	public void hideAllSideBars() {
@@ -573,6 +578,29 @@ public class ActionSender {
 		out.writeShort(player.getPosition().getRegionX() + 6,
 				StreamBuffer.ValueType.A);
 		out.writeShort(player.getPosition().getRegionY() + 6);
+		player.send(out.getBuffer());
+		return this;
+	}
+	
+	public ActionSender sendCopyMapRegion(Palette palette) {
+		StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(2048);
+		out.writeVariableShortPacketHeader(player.getEncryptor(), 241);
+		out.writeShort(player.getPosition().getRegionY() + 6, StreamBuffer.ValueType.A);
+		out.setAccessType(StreamBuffer.AccessType.BIT_ACCESS);
+		for(int z = 0; z < 4; z++) {
+			for(int x = 0; x < 13; x++) {
+				for(int y = 0; y < 13; y++) {
+					PaletteTile tile = palette.getTile(x, y, z);
+					out.writeBits(1, tile != null ? 1 : 0);
+					if(tile != null) {
+						out.writeBits(26, tile.getX() << 14 | tile.getY() << 3 | tile.getZ() << 24 | tile.getRotation() << 1);
+					}
+				}
+			}
+		}
+		out.setAccessType(StreamBuffer.AccessType.BYTE_ACCESS);
+		out.writeShort(player.getPosition().getRegionX() + 6);
+		out.finishVariableShortPacketHeader();
 		player.send(out.getBuffer());
 		return this;
 	}
@@ -698,15 +726,46 @@ public class ActionSender {
 		return this;
 	}
 
+	public ActionSender sendStringColor(int interfaceId, int color) {
+		StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(6);
+		out.writeHeader(player.getEncryptor(), 122);
+		out.writeShort(interfaceId, StreamBuffer.ValueType.A, StreamBuffer.ByteOrder.LITTLE);
+		out.writeShort(color, StreamBuffer.ValueType.A, StreamBuffer.ByteOrder.LITTLE);
+		player.send(out.getBuffer());
+		return this;
+	}
+	
 	public ActionSender sendString(String message, int interfaceId) {
-		StreamBuffer.OutBuffer out = StreamBuffer
-				.newOutBuffer(message.length() + 6);
+		StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(message.length() + 6);
 		out.writeVariableShortPacketHeader(player.getEncryptor(), 126);
 		out.writeString(message);
 		out.writeShort(interfaceId, StreamBuffer.ValueType.A);
 		out.finishVariableShortPacketHeader();
 		player.send(out.getBuffer());
 		return this;
+	}
+	
+	public void sendQuestLogString(String message, int logIndex, int questIndex, int strikeStage) {
+		if(player.getQuestStage(questIndex) < strikeStage) {
+		    return;
+		} else if(player.getQuestStage(questIndex) > strikeStage) {
+		    message = "@str@" + message;
+		}
+		StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(message.length() + 6);
+		out.writeVariableShortPacketHeader(player.getEncryptor(), 126);
+		out.writeString(message);
+		out.writeShort(logIndex + 8146, StreamBuffer.ValueType.A);
+		out.finishVariableShortPacketHeader();
+		player.send(out.getBuffer());
+	}
+	
+	public void sendQuestLogString(String message, int logIndex) {
+		StreamBuffer.OutBuffer out = StreamBuffer.newOutBuffer(message.length() + 6);
+		out.writeVariableShortPacketHeader(player.getEncryptor(), 126);
+		out.writeString(message);
+		out.writeShort(logIndex + 8146, StreamBuffer.ValueType.A);
+		out.finishVariableShortPacketHeader();
+		player.send(out.getBuffer());
 	}
 
 	public ActionSender sendFriendList(long name, int world) {
@@ -806,6 +865,19 @@ public class ActionSender {
 		return this;
 	}
 	
+	public ActionSender sendClanChat(String clanname, String name, String message, int rights) {
+		int packetLength = clanname.length() + name.length() + message.length();
+		StreamBuffer.OutBuffer out = StreamBuffer
+				.newOutBuffer(packetLength + 6);
+		out.writeVariablePacketHeader(player.getEncryptor(), 216);
+		out.writeString(clanname);
+		out.writeString(name);
+		out.writeString(message);
+		out.writeByte(rights);
+		out.finishVariablePacketHeader();
+		player.send(out.getBuffer());
+		return this;
+	}
 	
 
 	public ActionSender sendInterfaceAnimation(int intefaceChildId, int animId) {
@@ -1154,6 +1226,21 @@ public class ActionSender {
 		new GameObject(Constants.EMPTY_OBJECT, x2, y2, z, g2.getRotation(), 0,
 				id2, 3, false);
 	}
+	
+	public void walkThroughGateEW(final int id1, final int id2, final int x1, final int y1, final int x2, final int y2, final int h, boolean westOpening) {
+		final CacheObject g = ObjectLoader.object(id1, x1, y1, h);
+		final CacheObject g2 = ObjectLoader.object(id2, x2, y2, h);
+		final int z = player.getPosition().getZ();
+		if(westOpening) {
+			new GameObject(id1, x1 - 2, y1 - 1, z, 3, 0, Constants.EMPTY_OBJECT, 3, false);
+			new GameObject(id2, x2 - 1, y2, z, 3, 0, Constants.EMPTY_OBJECT, 3, false);
+		} else {
+			new GameObject(id1, x1 + 2, y1 - 1, z, 3, 0, Constants.EMPTY_OBJECT, 3, false);
+			new GameObject(id2, x2 + 1, y2, z, 3, 0, Constants.EMPTY_OBJECT, 3, false);
+		}
+		new GameObject(Constants.EMPTY_OBJECT, x1, y1, z, g2.getRotation(), 0, id1, 3, false);
+		new GameObject(Constants.EMPTY_OBJECT, x2, y2, z, g2.getRotation(), 0, id2, 3, false);
+	}
 
 	public void walkThroughDoor2(final int id1, final int id2, final int x1,
 			final int y1, final int x2, final int y2, final int h) {
@@ -1202,8 +1289,7 @@ public class ActionSender {
 	public void walkThroughDoor(final int id1, final int x1, final int y1,
 			final int h) {
 		final CacheObject g = ObjectLoader.object(id1, x1, y1, h);
-		new GameObject(id1, x1, y1, h, g.getRotation() - 1, 0, id1, 2,
-				g.getRotation(), x1, y1, false);
+		new GameObject(id1, x1, y1, h, g.getRotation() - 1, 0, id1, 2, g.getRotation(), x1, y1, false);
 	}
 	public void walkThroughDoor(final int id1, final int x1, final int y1,
 			final int h, final int type, final int face) {

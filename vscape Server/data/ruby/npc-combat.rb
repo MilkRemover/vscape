@@ -27,10 +27,10 @@ class MonkOfZamorak < NpcCombatDef
     end
 end
 
-class BloodVeld < NpcCombatDef
+class Bloodveld < NpcCombatDef
     def attackScripts attacker, victim
         return [
-                BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MAGIC, AttackStyle::Bonus::SLASH, 5, 6, 1552),
+                BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MAGIC, AttackStyle::Bonus::SLASH, 5, 5, 1552),
 	];
     end
 end
@@ -121,8 +121,7 @@ class GreenDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 5, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 8, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -133,8 +132,7 @@ class BrutalGreenDragon < NpcCombatDef
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 18, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 18, 5, 80),
 			BasicAttack.magicAttack(attacker, victim, Spell::BRUTAL_GREEN_SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 54, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -155,8 +153,7 @@ class BlueDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 7, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 10, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -166,8 +163,7 @@ class RedDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 10, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 16, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -177,8 +173,7 @@ class BlackDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 15, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 21, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -187,7 +182,6 @@ class KingBlackDragon < NpcCombatDef
     def attackScripts attacker, victim
         return [
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 26, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 393, ProjectileTrajectory.SPELL),
 			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 393, ProjectileTrajectory.SPELL),
 			BasicAttack.magicAttack(attacker, victim, Spell::KBD_POISON),
 			BasicAttack.magicAttack(attacker, victim, Spell::KBD_SHOCK),
@@ -201,8 +195,7 @@ class BronzeDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 8, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 12, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 54, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -212,8 +205,7 @@ class IronDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 15, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 20, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 54, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -223,8 +215,7 @@ class SteelDragon < NpcCombatDef
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 15, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 22, 5, 80),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 54, ProjectileTrajectory.SPELL)
         ];
     end
 end
@@ -235,8 +226,8 @@ class MithrilDragon < NpcCombatDef
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 28, 5, 80),
 			BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 20, 5, 80),
 			BasicAttack.magicAttack(attacker, victim, Spell::MITHRIL_SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL),
-			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(1, 0), Graphic.new(-1, 0), -1, ProjectileTrajectory.SPELL)
+			BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::DRAGONFIRE_FAR, 2, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 54, ProjectileTrajectory.SPELL),
+			BasicAttack.projectileAttack(attacker, victim, AttackType::RANGED, AttackStyle::Mode::LONGRANGE, 18, 8, 81, Graphic.new(-1, 0), Graphic.new(-1, 0), 16, ProjectileTrajectory.KNIFE)		
         ];
     end
 end
@@ -317,7 +308,8 @@ end
 class Spinolyp < NpcCombatDef
     def attackScripts attacker, victim
         return [
-			BasicAttack.magicAttack(attacker, victim, Spell::SPINOLYP)
+			BasicAttack.magicAttack(attacker, victim, Spell::SPINOLYP),
+			BasicAttack.projectileAttack(attacker, victim, AttackType::RANGED, AttackStyle::Mode::LONGRANGE, 11, 8, 2868, Graphic.new(-1, 0), Graphic.new(-1, 0), 294, ProjectileTrajectory.KNIFE)	
 		];
     end
 end
@@ -343,7 +335,8 @@ class KalphiteQueenFirstForm < NpcCombatDef
     def attackScripts attacker, victim
         return [
 		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::SLASH, 31, 5, 6241),
-                    BasicAttack.magicAttack(attacker, victim, Spell::KQ1)
+                    BasicAttack.magicAttack(attacker, victim, Spell::KQ1),
+		    BasicAttack.projectileAttack(attacker, victim, AttackType::RANGED, AttackStyle::Mode::LONGRANGE, 31, 8, 6240, Graphic.new(-1, 0), Graphic.new(-1, 0), 289, ProjectileTrajectory.KNIFE)
 		];
     end
 end
@@ -351,8 +344,9 @@ end
 class KalphiteQueenSecondForm < NpcCombatDef
     def attackScripts attacker, victim
         return [
+		    BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MELEE_ACCURATE, AttackStyle::Bonus::STAB, 31, 5, 6235),
                     BasicAttack.magicAttack(attacker, victim, Spell::KQ2),
-                    BasicAttack.projectileAttack(attacker, victim, AttackType::RANGED, AttackStyle::Mode::LONGRANGE, 31, 8, 6235, Graphic.new(-1, 0), Graphic.new(-1, 0), 294, ProjectileTrajectory.KNIFE)
+                    BasicAttack.projectileAttack(attacker, victim, AttackType::RANGED, AttackStyle::Mode::LONGRANGE, 31, 8, 6234, Graphic.new(-1, 0), Graphic.new(-1, 0), 289, ProjectileTrajectory.KNIFE)
 		];
     end
 end
@@ -417,6 +411,46 @@ class JungleDemon < NpcCombatDef
     end
 end
 
+class InfernalMage < NpcCombatDef
+	def attackScripts attacker, victim
+		return [
+			BasicAttack.magicAttack(attacker, victim, Spell::INFERNAL_MAGE_SPELL)
+		];
+	end
+end
+
+class Pyrefiend < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+                BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MAGIC, AttackStyle::Bonus::SLASH, 4, 5, 1582),
+	];
+    end
+end
+
+class Jelly < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+                BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MAGIC, AttackStyle::Bonus::SLASH, 7, 5, 1586),
+	];
+    end
+end
+
+class Banshee < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+                BasicAttack.meleeAttack(attacker, victim, AttackStyle::Mode::MAGIC, AttackStyle::Bonus::SLASH, 3, 5, 1523),
+	];
+    end
+end
+
+class AberrantSpectre < NpcCombatDef
+    def attackScripts attacker, victim
+        return [
+				BasicAttack.projectileAttack(attacker, victim, AttackType::MAGIC, AttackStyle::Mode::MAGIC, 10, 5, 1507, Graphic.new(-1, 0), Graphic.new(336, 500), 335, ProjectileTrajectory.SPECTRE_ATTACK)
+	];
+    end
+end
+
 NpcCombatDef.add([2025], Ahrims.new())
 NpcCombatDef.add([2028], Karil.new())
 NpcCombatDef.add([2746], YtHurkot.new()) #.bonusDef(1000, 1000, 1000, 1000, 600)
@@ -425,7 +459,7 @@ NpcCombatDef.add([2741], MejKot.new()) #.bonusDef(1000, 1000, 1000, 1000, 600)
 NpcCombatDef.add([2743], KetZek.new()) #.bonusDef(1300, 1300, 1300, 1300, 700)
 NpcCombatDef.add([2745], Jad.new()) #.bonusDef(2000, 2000, 2000, 2000, 1700)
 NpcCombatDef.add([1, 2, 3, 4], Man.new.respawnSeconds(10))
-NpcCombatDef.add([174, 3242], DarkWizard.new.respawnSeconds(10))
+NpcCombatDef.add([172, 174, 3242, 3243, 3244, 3245, 4658, 4659, 4660, 4661], DarkWizard.new.respawnSeconds(10))
 NpcCombatDef.add([941, 742], GreenDragon.new())
 NpcCombatDef.add([5362], BrutalGreenDragon.new())
 NpcCombatDef.add([55], BlueDragon.new())
@@ -454,10 +488,15 @@ NpcCombatDef.add([907], KolodionFirstForm.new())
 NpcCombatDef.add([908], KolodionSecondForm.new())
 NpcCombatDef.add([910], KolodionFourthForm.new())
 NpcCombatDef.add([1046], MonkOfZamorak.new())
-NpcCombatDef.add([1618], BloodVeld.new())
+NpcCombatDef.add([1618], Bloodveld.new())
 NpcCombatDef.add([1351, 1352, 1353, 1354, 1355, 1356], DagannothMother.new())
 NpcCombatDef.add([1341, 1342, 1343], WeakDagannothMelee.new())
 NpcCombatDef.add([1338, 1339, 1340], WeakDagannothRange.new())
 NpcCombatDef.add([3068, 3069, 3070, 3071], SkeletalWyvern.new())
 NpcCombatDef.add([1456, 1457, 1458], MonkeyArcher.new())
 NpcCombatDef.add([1472], JungleDemon.new())
+NpcCombatDef.add([1643], InfernalMage.new())
+NpcCombatDef.add([1633], Pyrefiend.new())
+NpcCombatDef.add([1640], Jelly.new())
+NpcCombatDef.add([1612], Banshee.new())
+NpcCombatDef.add([1604], AberrantSpectre.new())

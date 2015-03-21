@@ -1,9 +1,10 @@
 package com.rs2.model.content;
 
-import com.rs2.model.content.quests.DwarfCannon;
+import com.rs2.model.content.quests.impl.DwarfCannon;
 import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.players.Player;
 import com.rs2.model.players.ShopManager;
+import com.rs2.model.content.skills.Skill;
 
 /**
  * Created by IntelliJ IDEA. User: vayken Date: 5/16/12 Time: 1:16 AM To change
@@ -52,6 +53,12 @@ public class Shops {
 	
 			case 570:
 				return 13;
+				
+			case 569:
+				return 14;
+				
+			case 572:
+				return 15;
 	
 			case 563:
 				return 16;
@@ -294,6 +301,7 @@ public class Shops {
 				return 96;
 	
 			case 527:
+			case 526:
 				return 56;
 	
 			case 933:
@@ -475,7 +483,6 @@ public class Shops {
 			case 1680://crystal
 				return 171;
 			case 1921:
-			case 849:
 			case 736:
 			case 734:
 			case 1700: //ghost innkeeper
@@ -504,6 +511,20 @@ public class Shops {
 				return 201;
 			case 1435:
 				return 203;
+			case 970:
+				return 204;
+			case 971:
+				return 205;
+			case 1079:
+				return 206;
+			case 849:
+				return 207;
+			case 2270:
+				if(player.getSkill().getPlayerLevel(Skill.AGILITY) >= 50 && player.getSkill().getPlayerLevel(Skill.THIEVING) >= 50 || player.getSkill().getPlayerLevel(Skill.THIEVING) == 99) {
+					return 109;
+				} else {
+					player.getActionSender().sendMessage("You need a Thieving and Agility level of 50 to shop from this store.");
+				}
                        /* case 961:
                             if(player.getSkill().getLevel()[Skill.HITPOINTS] == 99) //Surgeon
                                 return 179;

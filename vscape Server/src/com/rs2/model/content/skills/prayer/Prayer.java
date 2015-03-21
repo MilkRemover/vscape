@@ -1,5 +1,6 @@
 package com.rs2.model.content.skills.prayer;
 
+import com.rs2.Constants;
 import com.rs2.model.Entity;
 import com.rs2.model.World;
 import com.rs2.model.content.combat.CombatCycleEvent;
@@ -96,6 +97,9 @@ public class Prayer {
 	private double amountToDrain = 0.0;
 	
 	public void prayerTick() {
+		if(Constants.DDOS_PROTECT_MODE) {
+			return;
+		}
 		for (int i = 0; i < player.getIsUsingPrayer().length; i++) {
 			try{
 			prayerTimers[i]--;
@@ -215,13 +219,13 @@ public class Prayer {
 		PrayerData[] turnOff = new PrayerData[0];
 		switch (data) {
 			case THICK_SKIN :
-				turnOff = new PrayerData[]{PrayerData.ROCK_SKIN, PrayerData.STEEL_SKIN,PrayerData.MYSTIC_WILL, PrayerData.MYSTIC_LORE, PrayerData.MYSTIC_MIGHT};
+				turnOff = new PrayerData[]{PrayerData.ROCK_SKIN, PrayerData.STEEL_SKIN};
 				break;
 			case ROCK_SKIN :
-				turnOff = new PrayerData[]{PrayerData.THICK_SKIN, PrayerData.STEEL_SKIN,PrayerData.MYSTIC_WILL, PrayerData.MYSTIC_LORE, PrayerData.MYSTIC_MIGHT};
+				turnOff = new PrayerData[]{PrayerData.THICK_SKIN, PrayerData.STEEL_SKIN};
 				break;
 			case STEEL_SKIN :
-				turnOff = new PrayerData[]{PrayerData.THICK_SKIN, PrayerData.ROCK_SKIN,PrayerData.MYSTIC_WILL, PrayerData.MYSTIC_LORE, PrayerData.MYSTIC_MIGHT};
+				turnOff = new PrayerData[]{PrayerData.THICK_SKIN, PrayerData.ROCK_SKIN};
 				break;
 			case CLARITY_OF_THOUGHT :
 				turnOff = new PrayerData[]{PrayerData.IMPROVED_REFLEXES, PrayerData.INCREDIBLE_REFLEXES,PrayerData.MYSTIC_WILL, PrayerData.MYSTIC_LORE, PrayerData.MYSTIC_MIGHT};
@@ -270,7 +274,6 @@ public class Prayer {
 				break;
 			case MYSTIC_WILL:
 				turnOff = new PrayerData[]{
-						PrayerData.ROCK_SKIN,PrayerData.THICK_SKIN, PrayerData.STEEL_SKIN,
 						PrayerData.CLARITY_OF_THOUGHT,PrayerData.IMPROVED_REFLEXES, PrayerData.INCREDIBLE_REFLEXES,
 						PrayerData.BURST_OF_STRENGTH,PrayerData.SUPERHUMAN_STRENGTH, PrayerData.ULTIMATE_STRENGTH,
 						PrayerData.SHARP_EYE,PrayerData.HAWK_EYE, PrayerData.EAGLE_EYE,
@@ -279,7 +282,6 @@ public class Prayer {
 				break;
 			case MYSTIC_LORE:
 				turnOff = new PrayerData[]{
-					PrayerData.ROCK_SKIN,PrayerData.THICK_SKIN, PrayerData.STEEL_SKIN,
 					PrayerData.CLARITY_OF_THOUGHT,PrayerData.IMPROVED_REFLEXES, PrayerData.INCREDIBLE_REFLEXES,
 					PrayerData.BURST_OF_STRENGTH,PrayerData.SUPERHUMAN_STRENGTH, PrayerData.ULTIMATE_STRENGTH,
 					PrayerData.SHARP_EYE,PrayerData.HAWK_EYE, PrayerData.EAGLE_EYE,
@@ -288,7 +290,6 @@ public class Prayer {
 				break;
 			case MYSTIC_MIGHT:
 				turnOff = new PrayerData[]{
-						PrayerData.ROCK_SKIN,PrayerData.THICK_SKIN, PrayerData.STEEL_SKIN,
 						PrayerData.CLARITY_OF_THOUGHT,PrayerData.IMPROVED_REFLEXES, PrayerData.INCREDIBLE_REFLEXES,
 						PrayerData.BURST_OF_STRENGTH,PrayerData.SUPERHUMAN_STRENGTH, PrayerData.ULTIMATE_STRENGTH,
 						PrayerData.SHARP_EYE,PrayerData.HAWK_EYE, PrayerData.EAGLE_EYE,

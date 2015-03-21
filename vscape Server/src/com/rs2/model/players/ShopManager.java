@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import com.rs2.Constants;
 import com.rs2.model.World;
 import com.rs2.model.players.container.Container;
@@ -226,6 +227,7 @@ public class ShopManager {
 			pricePerItem[i-1] = itemPrice;
 		}
 		int itemsAboveZero = 0;
+		@SuppressWarnings("unused")
 		int itemsZero = 0;
 		for(int i = 0; i < amount; i++)
 		{
@@ -291,10 +293,10 @@ public class ShopManager {
 				price = Math.round(price);
 			}
 			String currencyName = ItemManager.getInstance().getItemName(shop.getCurrency());
-			player.getActionSender().sendMessage("" + ItemManager.getInstance().getItemName(id) + ": currently costs " + Misc.formatNumber(price) + " " + currencyName + ".");
+			player.getActionSender().sendMessage("" + ItemManager.getInstance().getItemName(id) + ": currently costs " + Misc.formatNumber(price) + " " + currencyName + ".", true);
 		} else {
 			int price = getSpecialShopPrice(player, shop, id);
-			player.getActionSender().sendMessage("" + ItemManager.getInstance().getItemName(id) + ": currently costs " + price + " " + getCurrencyName(shop) + ".");
+			player.getActionSender().sendMessage("" + ItemManager.getInstance().getItemName(id) + ": currently costs " + price + " " + getCurrencyName(shop) + ".", true);
 		}
 	}
 
@@ -396,6 +398,10 @@ public class ShopManager {
 		//List<Shop> list = (List<Shop>) XStreamUtil.getxStream().fromXML(new FileInputStream("./data/content/shops.xml"));
 		FileReader reader = new FileReader("./datajson/content/shops.json");
 		try{
+			if(shops != null && shops.size() > 0)
+			{
+				shops.clear();
+			}
 			List<Shop> list = new Gson().fromJson(reader, new TypeToken<List<Shop>>(){}.getType());
 	        for (Shop shop : list) {
 				Container stock = new Container(Type.ALWAYS_STACK, SIZE);
@@ -411,7 +417,7 @@ public class ShopManager {
 				shop.setCurrentStock(currentStock);
 			}
 	        reader.close();
-			System.out.println("Loaded " + list.size() + " shop definitions json.");
+			System.out.println("Loaded " + shops.size() + " shop definitions json.");
 		} catch (IOException e) {
 			reader.close();
 			System.out.println("failed to load shop definitions json.");

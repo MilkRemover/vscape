@@ -9,6 +9,8 @@ import com.rs2.model.content.combat.effect.Effect;
 import com.rs2.model.content.combat.hit.HitDef;
 import com.rs2.model.content.minigames.duelarena.RulesData;
 import com.rs2.model.content.skills.Skill;
+import static com.rs2.model.content.skills.magic.MagicSkill.changeToComboRuneRequirement;
+import static com.rs2.model.content.skills.magic.MagicSkill.failRequirement;
 import com.rs2.model.content.skills.magic.Spell;
 import com.rs2.model.content.skills.magic.SpellBook;
 import com.rs2.model.npcs.Npc;
@@ -39,6 +41,11 @@ public class SpellAttack extends BasicAttack {
 			return AttackUsableResponse.Type.FAIL;
 		if (getAttacker().isPlayer()) {
 			if (getVictim().isNpc() && ((Npc) getVictim()).getMaxHp() <= 0) {
+				((Player) getAttacker()).getActionSender().sendMessage("You cannot cast a spell on this npc.");
+				((Player) getAttacker()).setCastedSpell(null);
+				return AttackUsableResponse.Type.FAIL;
+			}
+		if (getVictim().isNpc() && ((Npc) getVictim()).getNpcId() == 1052) {
 				((Player) getAttacker()).getActionSender().sendMessage("You cannot cast a spell on this npc.");
 				((Player) getAttacker()).setCastedSpell(null);
 				return AttackUsableResponse.Type.FAIL;
@@ -127,7 +134,12 @@ public class SpellAttack extends BasicAttack {
 	setHits(new HitDef[]{hitDef.randomizeDamage().applyAccuracy().addEffects(new Effect[]{spell.getRequiredEffect(), spell.getAdditionalEffect()})});
 	setGraphic(spell.getGraphic());
 	setAttackDelay(5);
-	Item[] runesRequired = spell.getRunesRequired();
+	Item[] runesRequired;
+	if (getAttacker().isPlayer() && failRequirement((Player) getAttacker(), spell)) {
+	    runesRequired = changeToComboRuneRequirement((Player) getAttacker(), spell);
+	} else {
+	    runesRequired = spell.getRunesRequired();
+	}
 	int staffRequired = -1;
 	
 		if(getAttacker().isPlayer()) {
@@ -190,6 +202,15 @@ public class SpellAttack extends BasicAttack {
                 player.setCastedSpell(null);
                 container.stop();
             }
+			player.getCombatSounds().spellSound(spell, true);
+			if(getVictim() != null && getVictim().isPlayer())
+			{
+				((Player) getVictim()).getCombatSounds().spellSound(spell, true);
+			}
+        }
+		if(getAttacker() != null && getAttacker().isNpc() && getVictim() != null && getVictim().isPlayer()){
+            Player player = (Player) getVictim();
+            player.getCombatSounds().spellSound(spell, true);
         }
         /*if (spell == Spell.ICE_BARRAGE) {
             if (getVictim().getMovementHandler().getWaypoints().size() > 0) {
@@ -233,6 +254,8 @@ public class SpellAttack extends BasicAttack {
 	public void failedRequirement() {
 		if (getAttacker().isPlayer()) {
 			Player player = (Player) getAttacker();
+			CombatManager.resetCombat(player);
+			player.getMovementHandler().reset();
 			if (player.getCastedSpell() == spell)
 				player.setCastedSpell(null);
 			else if (player.getAutoSpell() == spell)
@@ -264,5 +287,17 @@ public class SpellAttack extends BasicAttack {
 	   else if(gfx == Spell.SMOKE_BARRAGE.getHitDef().getHitGraphic()) return Spell.SMOKE_BARRAGE;
 	   else if(gfx == Spell.SMOKE_BURST.getHitDef().getHitGraphic()) return Spell.SMOKE_BURST;
 	   else return null;
+	}
+	
+	public static Spell getSpellForHitGfx(Graphic gfx) {
+		for(Spell spell : Spell.values())
+		{
+			if(spell.getHitDef() == null || spell.getHitDef().getHitGraphic() == null)
+				continue;
+			if(gfx == spell.getHitDef().getHitGraphic()){
+				return spell;
+			}
+		}
+		return null;
 	}
 }

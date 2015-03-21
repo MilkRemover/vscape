@@ -13,6 +13,7 @@ import com.rs2.net.packet.packets.ButtonPacketHandler;
 import com.rs2.net.packet.packets.CameraAnglePacketHandler;
 import com.rs2.net.packet.packets.ChatInterfacePacketHandler;
 import com.rs2.net.packet.packets.ChatPacketHandler;
+import com.rs2.net.packet.packets.ClanChatPacketHandler;
 import com.rs2.net.packet.packets.CloseInterfacePacketHandler;
 import com.rs2.net.packet.packets.CommandPacketHandler;
 import com.rs2.net.packet.packets.DefaultPacketHandler;
@@ -47,6 +48,7 @@ public class PacketManager {
 	private static PrivateMessagingPacketHandler pm = new PrivateMessagingPacketHandler();
 	private static NpcPacketHandler npc = new NpcPacketHandler();
 	private static PlayerOptionPacketHandler playerOption = new PlayerOptionPacketHandler();
+	private static ClanChatPacketHandler cc = new ClanChatPacketHandler();
 
 	public static void loadPackets() {
 		System.out.println("Loading packets...");
@@ -109,6 +111,8 @@ public class PacketManager {
 		packets[NpcPacketHandler.ITEM_ON_NPC] = npc;
 		packets[NpcPacketHandler.EXAMINE_NPC] = npc;
 		packets[FlashingSideIcon.FLASH_ICON] = new FlashingSideIcon();
+		packets[ClanChatPacketHandler.JOIN_CLAN_CHAT] = cc;
+		packets[ClanChatPacketHandler.ACTION_CLAN_CHAT] = cc;
 		packets[0] = silent;
 		packets[241] = silent;
 		packets[86] = silent;
@@ -120,6 +124,8 @@ public class PacketManager {
 		packets[230] = silent; // added this one
 		packets[36] = silent; // was constant for tele
 		packets[95] = silent;
+		packets[183] = object;
+		packets[228] = object; //183 && 228 are stones in nature grotto
 		
 		int count = 0;
 		for (PacketHandler packet : packets) {
@@ -149,37 +155,19 @@ public class PacketManager {
         {
             try 
             {
-    			if(!(packetHandler instanceof DefaultPacketHandler) && packet.getOpcode() != 202) {
+    			/*if(!(packetHandler instanceof DefaultPacketHandler) && packet.getOpcode() != 202) {
     				
-    			}
-			if(player.inTempleKnightsTraining() && player.getQuestStage(35) == 5) {
-			    player.recievedPacket = true;
-			}
+    			}*/
+				if(player.inTempleKnightsTraining() && player.getQuestStage(35) == 5) {
+				    player.getQuestVars().receivedPacket = true;
+				}
                 packetHandler.handlePacket(player, packet);
                 player.getTimeoutStopwatch().reset();
             } catch(Exception e) {
-                e.printStackTrace();
+    			e.printStackTrace();
+    			player.disconnect();
             }
         }
-		/*if (packetHandler == null) {
-			if (Constants.SERVER_DEBUG) {
-				System.out.println("Unhandled packet opcode = " + packet.getOpcode() + " length = " + packet.getPacketLength());
-			}
-			//player.disconnect();
-			return;
-		}
-		if (packet.getOpcode() <= 0) {
-			return;
-		}
-		try {
-			if(!(packetHandler instanceof DefaultPacketHandler) && packet.getOpcode() != 202) {
-			
-			}
-			packetHandler.handlePacket(player, packet);
-		} catch (Exception e) {
-			e.printStackTrace();
-			player.disconnect();
-		}*/
 	}
 
 	public static final void flushOutBuffer(Player player) {
@@ -228,19 +216,20 @@ public class PacketManager {
 			player.getInData().flip();
 			int loops = 0;
 			while (player.getInData().hasRemaining()) {
-                //if logged out, don't read any data
-                if (player.getLoginStage().compareTo(LoginStages.LOGGING_OUT) >= 0)
-                    break;
-
-				if (loops++ >= 25) {
-					//System.out.println("Player " + player + " disconnected for spamming packets");
-					player.disconnect();
-					break;
-				}
-
+				/*
+				//if logged out, don't read any data
+				if (player.getLoginStage().compareTo(LoginStages.LOGGING_OUT) >= 0)
+				    break;
+				    */
 				// Handle login if we need to.
 				if (player.getLoginStage().compareTo(LoginStages.LOGGED_IN) < 0) {
 					player.getLogin().handleLogin(player, player.getInData());
+					break;
+				}
+				
+				if (loops++ >= 25) {
+					System.out.println(player.getUsername() + " disconnected for spamming packets.");
+					player.disconnect();
 					break;
 				}
 
@@ -275,14 +264,14 @@ public class PacketManager {
 					player.getInData().compact();
 					return;
 				}
-                if (!player.isLoggedIn())
+                if (!player.isLoggedIn() || player.getLoginStage().compareTo(LoginStages.LOGGING_OUT) >= 0)
                     break;
 			}
 
 			// Clear everything for the next read.
 			player.getInData().clear();
 		} catch (Exception ex) {
-			//ex.printStackTrace();
+			ex.printStackTrace();
 			player.disconnect();
 		}
 	}

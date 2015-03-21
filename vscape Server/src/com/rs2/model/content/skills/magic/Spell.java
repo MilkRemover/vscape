@@ -72,19 +72,19 @@ public enum Spell {
 	LASSAR(72, 1979, Graphic.lowGraphic(392), 82, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.WATER, 4)}),
 	DAREEYAK(78, 1979, Graphic.lowGraphic(392), 88, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.FIRE, 3), new Item(Runes.AIR, 2)}),
 	CARRALLANGAR(84, 1979, Graphic.lowGraphic(392), 94, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.SOUL, 2)}),
-	ANNAKARL(90, 1979, Graphic.lowGraphic(392), 100, new Item[]{new Item(Runes.LAW, 1), new Item(Runes.BLOOD, 1)}),
-	GHORROCK(96, 1979, Graphic.lowGraphic(392), 106, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.BLOOD, 8)}),
+	ANNAKARL(90, 1979, Graphic.lowGraphic(392), 100, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.BLOOD, 2)}),
+	GHORROCK(96, 1979, Graphic.lowGraphic(392), 106, new Item[]{new Item(Runes.LAW, 2), new Item(Runes.WATER, 8)}),
 
 	//Special spells
 	CONFUSE(3, 716, Graphic.highGraphic(102), 13, new Item[]{new Item(Runes.WATER, 3), new Item(Runes.EARTH, 2), new Item(Runes.BODY, 1)}, magicHit(-1, magicProjectile(103), Graphic.highGraphic(104)), true, new StatEffect(Skill.ATTACK, .05), null),
 	WEAKEN(11, 716, Graphic.highGraphic(105), 21, new Item[]{new Item(Runes.WATER, 3), new Item(Runes.EARTH, 2), new Item(Runes.BODY, 1)}, magicHit(-1, magicProjectile(106), Graphic.highGraphic(107)), true, new StatEffect(Skill.STRENGTH, .05), null),
 	CURSE(19, 717, Graphic.highGraphic(108), 29, new Item[]{new Item(Runes.WATER, 2), new Item(Runes.EARTH, 3), new Item(Runes.BODY, 1)}, magicHit(-1, magicProjectile(109), Graphic.highGraphic(110)), true, new StatEffect(Skill.DEFENCE, .05), null),
 	VULNERABILITY(66, 729, Graphic.highGraphic(167), 76, new Item[]{new Item(Runes.EARTH, 5), new Item(Runes.WATER, 5), new Item(Runes.SOUL, 2)}, magicHit(-1, magicProjectile(168), Graphic.highGraphic(169)), true, new StatEffect(Skill.DEFENCE, .1), null),
-	ENFEEBLE(73, 729, Graphic.highGraphic(170), 89, new Item[]{new Item(Runes.EARTH, 8), new Item(Runes.WATER, 8), new Item(Runes.SOUL, 2)}, magicHit(-1, magicProjectile(171), Graphic.highGraphic(172)), true, new StatEffect(Skill.STRENGTH, .1), null),
+	ENFEEBLE(73, 729, Graphic.highGraphic(170), 89, new Item[]{new Item(Runes.EARTH, 8), new Item(Runes.WATER, 8), new Item(Runes.SOUL, 1)}, magicHit(-1, magicProjectile(171), Graphic.highGraphic(172)), true, new StatEffect(Skill.STRENGTH, .1), null),
 	STUN(80, 729, Graphic.highGraphic(173), 90, new Item[]{new Item(Runes.EARTH, 12), new Item(Runes.WATER, 12), new Item(Runes.SOUL, 1)}, magicHit(-1, magicProjectile(174), Graphic.highGraphic(107)), true, new StatEffect(Skill.ATTACK, .1), null),
 	BIND(20, 711, Graphic.highGraphic(177), 30, new Item[]{new Item(Runes.EARTH, 3), new Item(Runes.WATER, 3), new Item(Runes.NATURE, 2)}, magicHit(-1, magicProjectile(178), Graphic.highGraphic(181)), true, new BindingEffect(8), null),
-	SNARE(50, 711, Graphic.highGraphic(177), 60, new Item[]{new Item(Runes.EARTH, 4), new Item(Runes.WATER, 4), new Item(Runes.NATURE, 2)}, magicHit(2, magicProjectile(178), Graphic.highGraphic(180)), true, new BindingEffect(17), null),
-	ENTANGLE(79, 711, Graphic.highGraphic(177), 90, new Item[]{new Item(Runes.EARTH, 5), new Item(Runes.WATER, 5), new Item(Runes.NATURE, 2)}, magicHit(5, magicProjectile(178), Graphic.highGraphic(179)), true, new BindingEffect(25), null),
+	SNARE(50, 711, Graphic.highGraphic(177), 60, new Item[]{new Item(Runes.EARTH, 4), new Item(Runes.WATER, 4), new Item(Runes.NATURE, 3)}, magicHit(2, magicProjectile(178), Graphic.highGraphic(180)), true, new BindingEffect(17), null),
+	ENTANGLE(79, 711, Graphic.highGraphic(177), 90, new Item[]{new Item(Runes.EARTH, 5), new Item(Runes.WATER, 5), new Item(Runes.NATURE, 4)}, magicHit(5, magicProjectile(178), Graphic.highGraphic(179)), true, new BindingEffect(25), null),
 	
 	CRUMBLE_UNDEAD(39, 724, Graphic.highGraphic(146), 24.5, new Item[]{new Item(Runes.AIR, 2), new Item(Runes.EARTH, 2), new Item(Runes.CHAOS, 1)}, magicHit(15, magicProjectile(146), Graphic.highGraphic(147)), true),
 	MAGIC_DART(50, 1576, Graphic.highGraphic(327), 30, new Item[]{new Item(Runes.DEATH, 1), new Item(Runes.MIND, 4)}, magicHit(10, magicProjectile(328), Graphic.highGraphic(329)), true),
@@ -110,8 +110,6 @@ public enum Spell {
 	
 	BONES_TO_BANANA(15, 722, Graphic.highGraphic(141), 25, new Item[]{new Item(Runes.EARTH, 2), new Item(Runes.WATER, 2), new Item(Runes.NATURE)}),
 	BONES_TO_PEACH(60, 722, Graphic.highGraphic(311), 36, new Item[]{new Item(Runes.NATURE, 2), new Item(Runes.WATER, 4), new Item(Runes.EARTH, 4)}),
-	
-	
 
 	ENCHANT_LV_1(7, 719, Graphic.highGraphic(114), 7, new Item[]{new Item(Runes.WATER, 1), new Item(Runes.COSMIC)}),
 	ENCHANT_LV_2(27, 719, Graphic.highGraphic(114), 27, new Item[]{new Item(Runes.AIR, 3), new Item(Runes.COSMIC)}),
@@ -137,16 +135,16 @@ public enum Spell {
 	//Npc spells
 	CLAWS_OF_GUTHIX_BATTLE(198, magicHit(20, null, Graphic.highGraphic(77)), true),
 	FIRE_BOLT_ZAMORAK(711, magicHit(12, magicProjectile(127), Graphic.highGraphic(128)), true),
-	BRUTAL_GREEN_SPELL(81, magicHit(18, magicProjectile(139), Graphic.highGraphic(140)), true),
-	MITHRIL_SPELL(81, magicHit(18, magicProjectile(162), Graphic.highGraphic(163)), true),
-	SPINOLYP(2868, magicHit(10, magicProjectile(94), Graphic.highGraphic(95)), true, new StatEffect(5, 1)), 
+	BRUTAL_GREEN_SPELL(81, magicHit(18, magicProjectile(136), Graphic.highGraphic(137)), true),
+	MITHRIL_SPELL(81, magicHit(18, magicProjectile(136), Graphic.highGraphic(137)), true),
+	SPINOLYP(2868, magicHit(10, magicProjectile(94), Graphic.highGraphic(95)), true, new StatEffect(5, 0)), 
 	WALLASALKI(2365, magicHit(30, magicProjectile(162), Graphic.highGraphic(163)), true),
 	PRIME(2853, magicHit(61, magicProjectile(162), Graphic.highGraphic(163)), true),
 	NECROMANCER(811, magicHit(0, null, null), true, new SummonNpc(77)),
 	TORCHER(3880, magicHit(5, magicProjectile(660), Graphic.highGraphic(101)), true),
 	CHAOSMAIN(3146, magicHit(26, magicProjectile(Runes.EARTH), Graphic.highGraphic(Runes.AIR)), true),
 	CHAOSDISARM(3146, magicHit(0, magicProjectile(551), Graphic.highGraphic(550)), true, new UnequipEffect()),
-	KQ1(0, 6240, new Graphic(278, 0), 0, null, magicHit(31, magicProjectile(500), Graphic.highGraphic(163)), true),
+	KQ1(6225, magicHit(31, magicProjectile(280), Graphic.highGraphic(281)), true),
 	KQ2(0, 6234, new Graphic(279, 0), 0, null, magicHit(31, magicProjectile(500), Graphic.highGraphic(163)), true),
 	KOLODION1(62, 711, Graphic.highGraphic(158), 36, new Item[]{new Item(Runes.AIR, 5), new Item(Runes.BLOOD)}, magicHit(17, magicProjectile(159), Graphic.highGraphic(160)), true),
 	KOLODION2(65, 132, Graphic.highGraphic(161), 37.5, new Item[]{new Item(Runes.AIR, 5), new Item(Runes.BLOOD), new Item(Runes.WATER, 7)}, magicHit(20, magicProjectile(162), Graphic.highGraphic(163)), true),
@@ -158,6 +156,7 @@ public enum Spell {
 	JUNGLE_DEMON_BLAST_2(69, magicHit(32, magicProjectile(162), Graphic.highGraphic(163)), true),
 	JUNGLE_DEMON_BLAST_3(69, magicHit(32, magicProjectile(165), Graphic.highGraphic(166)), true),
 	JUNGLE_DEMON_BLAST_4(69, magicHit(32, magicProjectile(156), Graphic.highGraphic(157)), true),
+	INFERNAL_MAGE_SPELL(59, 711, Graphic.highGraphic(129), 0, new Item[]{}, magicHit(8, magicProjectile(130), Graphic.highGraphic(131)), true),
 	/*End*/;
 
 	private int levelRequired, animation;

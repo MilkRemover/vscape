@@ -9,14 +9,16 @@ import com.rs2.model.content.combat.special.SpecialType;
 import com.rs2.model.content.combat.util.Degradeables;
 import com.rs2.model.content.combat.util.Degrading;
 import com.rs2.model.content.combat.weapon.Weapon;
+import com.rs2.model.content.dialogue.Dialogues;
 import com.rs2.model.content.minigames.castlewars.Castlewars;
 import com.rs2.model.content.minigames.duelarena.RulesData;
-import com.rs2.model.content.quests.DragonSlayer;
-import com.rs2.model.content.quests.GhostsAhoy;
-import com.rs2.model.content.quests.LostCity;
+import com.rs2.model.content.quests.impl.DragonSlayer;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.LostCity;
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
-import com.rs2.model.content.quests.RecruitmentDrive;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.PlagueCity;
+import com.rs2.model.content.quests.impl.RecruitmentDrive;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.SkillCapeHandler;
 import com.rs2.model.content.skills.runecrafting.Tiaras;
@@ -48,8 +50,8 @@ public class Equipment {
 
 	private Player player;
 
-	private static String[] hideArms = {"robe", "top", "blouse", "shirt", "platebody", "brassard", "dragon chainbody", "rock-shell plate", "spined body", "zamorak d'hide", "guthix d'hide", "saradomin d'hide", "lunar torso", "snakeskin body", "torags body", "dharoks body", "guthans body", "initiate hauberk"};
-	private static String[] hideHairAndBeard = {"spiny helmet", "initiate sallet", "full helm", "saradomin full", "veracs helm", "guthans helm", "torags helm", "saradomin helm", "spined helm", "lunar helm", "h'ween mask"};
+	private static String[] hideArms = {"robe", "top", "blouse", "shirt", "platebody", "brassard", "dragon chainbody", "rock-shell plate", "spined body", "zamorak d'hide", "guthix d'hide", "saradomin d'hide", "lunar torso", "snakeskin body", "torags body", "dharoks body", "guthans body", "initiate hauberk", "doctors' gown"};
+	private static String[] hideHairAndBeard = {"spiny helmet", "initiate sallet", "full helm", "saradomin full", "veracs helm", "guthans helm", "torags helm", "saradomin helm", "spined helm", "lunar helm", "h'ween mask", "gas mask"};
 	private static String[] hideHair = {"cowl", "camel", "bandana", "decorative helm", "med helm", "coif", "hood", "bandanna", "berserker helm", "archer helm", "farseer helm", "warrior helm", "skeletal", "dharoks helm", "mask", "rock-shell helm", "void melee helm", "void mage helm", "void ranger helm", "3rd age mage hat"};
 	private static String[] hideBeard = {"facemask", "mime mask"};
 
@@ -178,8 +180,8 @@ public class Equipment {
 			player.getEquipment().removeAmount(Constants.WEAPON, 1);
 			player.getInventory().addItemOrBank(new Item(4587));
 		    }
-		    player.getActionSender().sendMessage("Your d-scim has been un-equipped due to lack of progress in Monkey Madness. :^)");
-		    player.getActionSender().sendMessage("If your inventory is full it was sent to your bank.");
+		    player.getActionSender().sendMessage("Your d-scim has been un-equipped due to lack of progress in Monkey Madness. :^)", true);
+		    player.getActionSender().sendMessage("If your inventory is full it was sent to your bank.", true);
 		}
 	}
 
@@ -264,6 +266,11 @@ public class Equipment {
 			if ((item.getId() == 1171 && player.getEquipment().getItemContainer().contains(1277) || (item.getId() == 1277 && player.getEquipment().getItemContainer().contains(1171))))
 				player.getNewComersSide().setTutorialIslandStage(player.getNewComersSide().getTutorialIslandStage() + 1, true);
 		}
+		if(equipSlot == Constants.HAT && player.getEquipment().getId(Constants.HAT) == PlagueCity.GAS_MASK && player.inWestArdougne()) {
+			player.getDialogue().sendPlayerChat("I don't really want to die from the plague.", "I should keep this mask on my head.", Dialogues.CONTENT);
+			player.getDialogue().endDialogue();
+			return;
+		}
 		if (item.getId() == 772 && !player.hasKilledTreeSpirit()) {
 			player.getDialogue().sendStatement("You need to kill the tree spirit in Entrana to weild this.");
 			return;
@@ -287,7 +294,7 @@ public class Equipment {
 			if(equipSlot == Constants.WEAPON){
 			    if (equipItem != null) {
 			    	if(equipItem.getId() == Castlewars.SARA_BANNER || equipItem.getId() == Castlewars.ZAMMY_BANNER){
-			    		player.getActionSender().sendMessage("Return the banner to your base!");
+			    		player.getActionSender().sendMessage("Return the banner to your base!", true);
 			    		return;
 			    	}
 			    }
@@ -340,7 +347,7 @@ public class Equipment {
 				break;
 		}
 		if (disabled) {
-			player.getActionSender().sendMessage("You cannot wear this during this fight!");
+			player.getActionSender().sendMessage("You cannot wear this during this fight!", true);
 			return;
 		}
 		boolean removedItem = false;
@@ -364,7 +371,7 @@ public class Equipment {
 			if (slotType == Constants.WEAPON) {
 				if (item.getDefinition().isTwoHanded() || item.getDefinition().getName().toLowerCase().toLowerCase().contains("godsword")) {
 					if (itemContainer.get(Constants.WEAPON) != null && itemContainer.get(Constants.SHIELD) != null && player.getInventory().getItemContainer().freeSlot() == -1) {
-						player.getActionSender().sendMessage("Not enough space in your inventory.");
+						player.getActionSender().sendMessage("Not enough space in your inventory.", true);
 						return;
 					}
 					player.getInventory().removeItemSlot(item, slot);
@@ -413,14 +420,14 @@ public class Equipment {
 			if (d.getOriginalId() == item.getId()) {
 			    if (player.getDegradeableHits()[d.getPlayerArraySlot()] <= 0) {
 				player.setDegradeableHits(d.getPlayerArraySlot(), 0);
-				player.getActionSender().sendMessage("Your " + item.getDefinition().getName().toLowerCase() + " will degrade and become untradeable upon combat.");
+				player.getActionSender().sendMessage("Your " + item.getDefinition().getName().toLowerCase() + " will degrade and become untradeable upon combat.", true);
 			    }
 			}
 			int count = 1;
 			for (int i : d.getIterableDegradedIds(!item.getDefinition().getName().toLowerCase().contains("crystal"))) {
 			    if (item.getId() == i) {
 				int hitCount = player.getDegradeableHits()[Degradeables.getDegradeableItem(item).getPlayerArraySlot()];
-				player.getActionSender().sendMessage("You have " + ((Degradeables.DEGRADE_HITS * count) - hitCount) + " hits on your " + item.getDefinition().getName().toLowerCase() + " until the next degrade.");
+				player.getActionSender().sendMessage("You have " + ((Degradeables.DEGRADE_HITS * count) - hitCount) + " hits on your " + item.getDefinition().getName().toLowerCase() + " until the next degrade.", true);
 			    }
 			    count++;
 			}
@@ -442,7 +449,7 @@ public class Equipment {
 		    if(!player.skillCapeBoost) {
 			player.skillCapeBoost = true;
 			player.getActionSender().statEdit(SkillCapeHandler.SkillCape.forItemId(item.getId()).getSkillId(), 1, true);
-			player.getActionSender().sendMessage("You feel a slight boost in your abilities.");
+			player.getActionSender().sendMessage("You feel a slight boost in your abilities.", true);
 			CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
 			    @Override
 			    public void execute(CycleEventContainer b) {
@@ -480,12 +487,12 @@ public class Equipment {
 		if(player.inCwGame() || player.inCwLobby())
 		{
 			if(slot == Constants.CAPE){
-			    player.getActionSender().sendMessage("You cannot unequip this cape in Castlewars!");
+			    player.getActionSender().sendMessage("You cannot unequip this cape in Castlewars!", true);
 				return;
 			}
 			if(slot == Constants.WEAPON){
 				if(item.getId() == Castlewars.SARA_BANNER || item.getId() == Castlewars.ZAMMY_BANNER){
-					player.getActionSender().sendMessage("Return the banner to your base!");
+					player.getActionSender().sendMessage("Return the banner to your base!", true);
 					return;
 				}
 			}
@@ -493,13 +500,18 @@ public class Equipment {
 			{
 		    	if(player.wearingCwBracelet())
 		    	{
-		    		player.getActionSender().sendMessage("You cannot unequip your Castlewars bracelet while in castlewars.");
+		    		player.getActionSender().sendMessage("You cannot unequip your Castlewars bracelet while in castlewars.", true);
 		    		return;
 		    	}
 			}
 		}
+		if(item.getId() == PlagueCity.GAS_MASK && player.inWestArdougne()) {
+			player.getDialogue().sendPlayerChat("I don't really want to die from the plague.", "I should keep this on my head.", Dialogues.CONTENT);
+			player.getDialogue().endDialogue();
+			return;
+		}
         if (player.getInventory().getItemContainer().freeSlot() == -1) {
-            player.getActionSender().sendMessage("Not enough space in your inventory.");
+            player.getActionSender().sendMessage("Not enough space in your inventory.", true);
             return;
         }
     	if (item.getId() == 6583 || item.getId() == 7927 || ApeAtoll.GreeGreeData.forItemId(item.getId()) != null) {
@@ -738,8 +750,8 @@ public class Equipment {
 				    if(!Degrading.ownsDegradedVersion(player, itemId)) {
 					player.setDegradeableHits(Degradeables.getDegradeableItem(new Item(itemId)).getPlayerArraySlot(), 0);
 				    } else {
-					player.getActionSender().sendMessage("You already have this degradeable item bound to you!");
-					player.getActionSender().sendMessage("Repair it, or let it break completely.");
+					player.getActionSender().sendMessage("You already have this degradeable item bound to you!", true);
+					player.getActionSender().sendMessage("Repair it, or let it break completely.", true);
 					return false;
 				    }
 				}
@@ -784,14 +796,14 @@ public class Equipment {
 		} else if (targetSlot == Constants.FEET || targetSlot == Constants.LEGS || targetSlot == Constants.SHIELD || targetSlot == Constants.CHEST || targetSlot == Constants.HAT || targetSlot == Constants.HANDS) {
 			if(targetSlot == Constants.HAT && (player.inCwGame() || player.inCwLobby()))
 			{
-			    player.getActionSender().sendMessage("You cannot wear this headwear in Castlewars!");
+			    player.getActionSender().sendMessage("You cannot wear this headwear in Castlewars!", true);
 				return false;
 			}
 			if(targetSlot == Constants.HANDS && (player.inCwGame() || player.inCwLobby()))
 			{
 		    	if(player.wearingCwBracelet())
 		    	{
-		    		player.getActionSender().sendMessage("You cannot unequip your Castlewars bracelet while in castlewars.");
+		    		player.getActionSender().sendMessage("You cannot unequip your Castlewars bracelet while in castlewars.", true);
 		    		return false;
 		    	}
 			}
@@ -819,8 +831,8 @@ public class Equipment {
 				    if(!Degrading.ownsDegradedVersion(player, itemId)) {
 					player.setDegradeableHits(Degradeables.getDegradeableItem(new Item(itemId)).getPlayerArraySlot(), 0);
 				    } else {
-					player.getActionSender().sendMessage("You already have this degradeable item bound to you!");
-					player.getActionSender().sendMessage("Repair it, or let it break completely.");
+					player.getActionSender().sendMessage("You already have this degradeable item bound to you!", true);
+					player.getActionSender().sendMessage("Repair it, or let it break completely.", true);
 					return false;
 				    }
 				}
@@ -959,7 +971,7 @@ public class Equipment {
 			} 
 			if(player.inCwGame() || player.inCwLobby())
 			{
-			    player.getActionSender().sendMessage("You cannot wear this cape in Castlewars!");
+			    player.getActionSender().sendMessage("You cannot wear this cape in Castlewars!", true);
 				return false;
 			}
 			if (defenceLevelReq > 0) {
@@ -1223,7 +1235,7 @@ public class Equipment {
 				return;
 			case 10440:
 			case 10442:
-			case 10446:
+			case 10444:
 			case 10470:
 			case 10472:
 			case 10474: //stoles and croziers
@@ -1271,6 +1283,10 @@ public class Equipment {
 			case 7384:
 			case 7382: //blue (t) and (g) chap
 			    rangeLevelReq = 50;
+			    return;
+			case 11283:
+			case 11284: //DFS
+			    defenceLevelReq = 75;
 			    return;
 			case 1135: //green dhide body
 				rangeLevelReq = 40;
@@ -1439,7 +1455,7 @@ public class Equipment {
 			}
 			return;
 		}
-		if (itemName.contains("black") && !itemName.contains("d'hide")) 
+		if (itemName.contains("black") && !itemName.contains("d'hide") && !itemName.contains("ele'")) 
 		{
 			if(itemName.contains("dagger") || itemName.contains("axe") || itemName.contains("mace") || itemName.contains("claws") || itemName.contains("sword") || 
 			   itemName.contains("scim") || itemName.contains("spear") || itemName.contains("hammer") || itemName.contains("halberd")) {
@@ -1526,7 +1542,7 @@ public class Equipment {
 			}
 			return;
 		}
-		if (itemName.contains("adamant") || itemName.contains("addy")) 
+		if (itemName.contains("adamant") || itemName.contains("addy") || itemName.contains("adam")) 
 		{
 			if(itemName.contains("dagger") || itemName.contains("axe") || itemName.contains("mace") || itemName.contains("claws") || itemName.contains("sword") || 
 			   itemName.contains("scim") || itemName.contains("spear") || itemName.contains("hammer") || itemName.contains("halberd")) {
@@ -1584,7 +1600,7 @@ public class Equipment {
 			}
 			return;
 		}
-		if (itemName.contains("dragon") && !itemName.contains("anti")) 
+		if ((itemName.contains("dragon") || itemName.contains("drag")) && !itemName.contains("anti")) 
 		{
 			if(itemName.contains("dagger") || itemName.contains("axe") || itemName.contains("mace") || itemName.contains("claws") || itemName.contains("sword") || 
 			   itemName.contains("scim") || itemName.contains("spear") || itemName.contains("hammer") || itemName.contains("halberd")) {
@@ -1594,7 +1610,7 @@ public class Equipment {
 					strengthLevelReq = 30;
 				}
 			}
-			if (itemName.contains("body") || itemName.contains("legs") || itemName.contains("skirt") || itemName.contains("helm") || itemName.contains("shield") || itemName.contains("boots")) {
+			if (itemName.contains("body") || itemName.contains("shield") || itemName.contains("legs") || itemName.contains("skirt") || itemName.contains("helm") || itemName.contains("boots")) {
 				defenceLevelReq = 60;
 			}
 			return;

@@ -1,17 +1,13 @@
 package com.rs2.model.players;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -62,17 +58,16 @@ import com.rs2.model.content.minigames.magetrainingarena.CreatureGraveyard;
 import com.rs2.model.content.minigames.magetrainingarena.EnchantingChamber;
 import com.rs2.model.content.minigames.magetrainingarena.TelekineticTheatre;
 import com.rs2.model.content.minigames.pestcontrol.*;
-import com.rs2.model.content.quests.ChristmasEvent;
-import com.rs2.model.content.quests.GhostsAhoyPetition;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
-import static com.rs2.model.content.quests.MonkeyMadness.ApeAtoll.DUNGEON;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtollNpcs;
-import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
-import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadnessVars;
-import com.rs2.model.content.quests.PiratesTreasure;
-import com.rs2.model.content.randomevents.Pillory;
-import com.rs2.model.content.randomevents.RandomEvent;
-import com.rs2.model.content.randomevents.InterfaceClicking.impl.InterfaceClickHandler;
+import com.rs2.model.content.quests.impl.ChristmasEvent.ChristmasEvent;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoyPetition;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtollNpcs;
+import com.rs2.model.content.quests.impl.MonkeyMadness.MonkeyMadness;
+import com.rs2.model.content.quests.impl.MonkeyMadness.MonkeyMadnessVars;
+import com.rs2.model.content.quests.impl.NatureSpirit;
+import com.rs2.model.content.quests.impl.PiratesTreasure;
+import com.rs2.model.content.quests.impl.PlagueCity;
+import com.rs2.model.content.randomevents.RandomHandler;
 import com.rs2.model.content.skills.ItemOnItemHandling;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.SkillResources;
@@ -108,7 +103,6 @@ import com.rs2.model.content.skills.prayer.Prayer.PrayerData;
 import com.rs2.model.content.skills.runecrafting.Pouches;
 import com.rs2.model.content.skills.runecrafting.Tiaras;
 import com.rs2.model.content.skills.slayer.Slayer;
-import com.rs2.model.content.treasuretrails.ClueScroll;
 import com.rs2.model.content.tutorialisland.NewComersSide;
 import com.rs2.model.content.tutorialisland.StagesLoader;
 import com.rs2.model.ground.GroundItem;
@@ -118,6 +112,8 @@ import com.rs2.model.npcs.NpcDefinition;
 import com.rs2.model.npcs.NpcLoader;
 import com.rs2.model.npcs.functions.Cat;
 import com.rs2.model.players.bank.BankManager;
+import com.rs2.model.players.clanchat.ClanChat;
+import com.rs2.model.players.clanchat.ClanChatHandler;
 import com.rs2.model.players.container.Container;
 import com.rs2.model.players.container.Container.Type;
 import com.rs2.model.players.container.equipment.Equipment;
@@ -129,8 +125,7 @@ import com.rs2.model.tick.CycleEvent;
 import com.rs2.model.tick.CycleEventContainer;
 import com.rs2.model.tick.CycleEventHandler;
 import com.rs2.model.tick.Tick;
-import com.rs2.model.region.music.RegionMusic;
-import com.rs2.model.region.music.MusicPlayer;
+import com.rs2.model.region.music.MusicManager;
 import com.rs2.net.ActionSender;
 import com.rs2.net.DedicatedReactor;
 import com.rs2.net.ISAACCipher;
@@ -147,9 +142,11 @@ import com.rs2.util.plugin.LocalPlugin;
 import com.rs2.util.plugin.PluginManager;
 import com.rs2.util.sql.SQL;
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.RecruitmentDrive;
-import com.rs2.model.content.quests.SantaEncounter;
-import com.rs2.model.content.randomevents.FreakyForester;
+import com.rs2.model.content.quests.QuestVariables;
+import com.rs2.model.content.quests.impl.RecruitmentDrive;
+import com.rs2.model.content.quests.impl.ChristmasEvent.SantaEncounter;
+import com.rs2.model.content.quests.impl.DeathPlateau.GamblingDice;
+import com.rs2.model.content.skills.cooking.GnomeCooking;
 import com.rs2.model.content.skills.ranging.DwarfMultiCannon;
 import com.rs2.model.content.skills.farming.MithrilSeeds;
 import com.rs2.model.content.skills.firemaking.BarbarianSpirits;
@@ -195,23 +192,19 @@ public class Player extends Entity {
 	private Skill skill = new Skill(this);
 	private ActionSender actionSender = new ActionSender(this);
 	private RuneDraw runeDraw = new RuneDraw(this);
+	private GamblingDice gamblingDice = new GamblingDice(this);
 	private Puzzle puzzle = new Puzzle(this);
 	private MithrilSeeds seeds = new MithrilSeeds(this);
 	private Barrows barrows = new Barrows(this);
 	private BarbarianSpirits barbarianSpirits = new BarbarianSpirits(this);
-	private FreakyForester freakyForester = new FreakyForester(this);
-	private Pillory pillory = new Pillory(this);
 	private GhostsAhoyPetition petition = new GhostsAhoyPetition(this);
-	private boolean[] runeDrawWins = {false, false, false};
-	private boolean justWonRuneDraw = false;
+	private RandomHandler randomHandler = new RandomHandler(this);
 	private boolean wyvernWarned = false;
-	private boolean shotGrip = false;
 	private Slayer slayer = new Slayer(this);
 	private NewComersSide newComersSide = new NewComersSide(this);
 	private PlayerInteraction playerInteraction = new PlayerInteraction(this);
 	private AgilityCourses agilityCourse = new AgilityCourses(this);
-	private RegionMusic regionMusic = new RegionMusic(this);
-	private MusicPlayer musicPlayer = new MusicPlayer(this);
+	private MusicManager musicManager = new MusicManager(this);
 	private CombatSounds combatSounds = new CombatSounds(this);
 	private DuelMainData duelMainData = new DuelMainData(this);
 	private AlchemistPlayground alchemistPlayground = new AlchemistPlayground(this);
@@ -236,6 +229,7 @@ public class Player extends Entity {
 	private ItemOnItemHandling itemOnItem = new ItemOnItemHandling(this);
 	private SkillGuides skillGuides = new SkillGuides(this);
 	private Food food = new Food(this);
+	private GnomeCooking gnomeCooking = new GnomeCooking(this);
 	private Potion potion = new Potion(this);
 	private MineOre mining = new MineOre(this);
 	private Cooking cooking = new Cooking(this);
@@ -259,7 +253,7 @@ public class Player extends Entity {
 	private Pets pets = new Pets(this);
 	private Cat cat = new Cat(this);
 	private MonkeyMadnessVars MMVars = new MonkeyMadnessVars(this);
-	private InterfaceClickHandler randomInterfaceClick = new InterfaceClickHandler(this);
+	private QuestVariables questVars = new QuestVariables(this);
 	private DialogueManager dialogue = new DialogueManager(this);
 	private BankPin bankPin = new BankPin(this);
 	private Login login = new Login();
@@ -277,7 +271,6 @@ public class Player extends Entity {
 	public boolean trackerGnome1 = false;
 	public boolean trackerGnome2 = false;
 	public boolean trackerGnome3 = false;
-	private int ballistaIndex = -1;
 	private int clickX = -1;
 	private int clickY = -1;
 	private int clickZ = -1;
@@ -285,6 +278,7 @@ public class Player extends Entity {
 	private int clickItemId = -1;
 	private int interfaceId = -1;
 	private int slot = -1;
+	private boolean equipmentOperate = false;
 	private int npcClickIndex;
 	private boolean withdrawAsNote;
 	private int enterXId;
@@ -302,19 +296,6 @@ public class Player extends Entity {
 	private int currentOptionId;
 	private int optionClickId;
 	private int currentGloryId;
-	public int comboLockLetter1 = 1;
-	public int comboLockLetter2 = 1;
-	public int comboLockLetter3 = 1;
-	public int comboLockLetter4 = 1;
-	public boolean foxRight = true;
-	public boolean chickenRight = true;
-	public boolean grainRight = true;
-	public boolean foxLeft = false;
-	public boolean chickenLeft = false;
-	public boolean grainLeft = false;
-	public boolean recievedPacket = false;
-	private boolean gazeOfSaradomin = false;
-	public String templeKnightRiddleAnswer = "NULL";
 	private int returnCode = Constants.LOGIN_RESPONSE_OK;
 	private TradeStage tradeStage = TradeStage.WAITING;
 	private int[] pendingItems = new int[Inventory.SIZE];
@@ -327,16 +308,15 @@ public class Player extends Entity {
 	private boolean killedTreeSpirit;
 	private boolean resetbank;
 	public SantaEncounter santaEncounter = new SantaEncounter(this);
-	public static boolean snowballsReady = false;
-	public static boolean snowballsTimerRunning = false;
-	public static boolean encounterRunning = false;
-	public static boolean skillCapeBoost = false;
+	public boolean snowballsReady = false;
+	public boolean snowballsTimerRunning = false;
+	public boolean encounterRunning = false;
+	public boolean skillCapeBoost = false;
 	private boolean killedJungleDemon;
 	private int prayerIcon = -1;
 	private int skullIcon = -1;
 	private int serverPoints = 0;
 	private boolean[] isUsingPrayer = new boolean[24];
-	private boolean[] ernestLevers = new boolean[6];
 	private boolean hurkotsSpawned = false;
 	private int prayerDrainTimer = 6;
 	private SpellBook magicBookType = SpellBook.MODERN;
@@ -353,26 +333,11 @@ public class Player extends Entity {
 	private boolean musicAuto = true;
 	private int effectVolume = 0;
 	private int questPoints = 0;
-	private boolean canHaveGodCape = true; //cadillac
+	private boolean canHaveGodCape = true;
 	private boolean specialAttackActive = false;
-	private boolean usedFreeGauntletsCharge = false;
-	private boolean chronozonWind = false;
-	private boolean chronozonWater = false;
-	private boolean chronozonEarth = false;
-	private boolean chronozonFire = false;
-	private boolean northLever = false;
-	private boolean northRoomLever = false;
-	private boolean southLever = false;
-	private boolean placedFireRune = false;
-	private boolean placedAirRune = false;
-	private boolean placedEarthRune = false;
-	private boolean placedWaterRune = false;
-	private boolean placedSword = false;
-	private boolean placedArrow = false;
+	
 	private int godBook = 0;
 	private int lostGodBook = 0;
-	private int railingsFixed = 0;
-	private ArrayList<Integer> railings = new ArrayList<>();
 	private double specialDamage = 1, specialAccuracy = 1;
 	private int specialAmount = 100;
 	private int ringOfRecoilLife = 40;
@@ -398,6 +363,7 @@ public class Player extends Entity {
 	public Npc spawnedNpc;
 	private long usernameAsLong;
 	private boolean hamTrapDoor;
+	private boolean inCutscene = false;
 	private Weapon equippedWeapon = Weapon.FISTS;
 	private SpecialType specialType;
 	private List<SkullRecord> skullRecords;
@@ -441,7 +407,7 @@ public class Player extends Entity {
 	{"Getting Started", 0, 2, 1}};
 	public int[] questStage = new int[0];
 	
-	private int[] sidebarInterfaceId = { 2423, 3917, 638, 3213, 1644, 5608, 0, -1, 5065,
+	private int[] sidebarInterfaceId = { 2423, 3917, 638, 3213, 1644, 5608, 0, 25000, 5065,
             5715, 2449, 904, 147, 962 };
 
 	// Public ints
@@ -467,11 +433,6 @@ public class Player extends Entity {
 	public int challengeScroll;
 	public int skillAnswer;
 	public int pcSkillPoints;
-	public Item[] puzzleStoredItems = new Item[ClueScroll.PUZZLE_LENGTH];
-	public boolean waterfallOption1 = false;
-        public boolean waterfallOption2 = false;
-        public boolean waterfallOption3 = false;
-        public boolean waterfallPillars[][] = {{false,false,false},{false,false,false},{false,false,false},{false,false,false},{false,false,false},{false,false,false}};
 	private int tempInteger;
 	public boolean isCrossingObstacle = false;
 	public int currentSong;
@@ -488,7 +449,7 @@ public class Player extends Entity {
 	private Player lastPersonTraded;
 	private Player lastPersonChallenged;
 
-	private int drunkTimer;
+	private int drunkTimer = 0;
 	private boolean isDrunk;
 	
 	private int pcDamage = 0;
@@ -497,42 +458,23 @@ public class Player extends Entity {
 	private int saradominCasts = 0;
 	private int guthixCasts = 0;
 	private int mageArenaStage = 0;
-	private boolean phoenixGang = false;
-	private boolean blackArmGang = false;
-	private boolean melzarsDoor = false;
-	private boolean shipyardGate = false;
-	private boolean tTwig = false;
-	private boolean uTwig = false;
-	private boolean zTwig = false;
-	private boolean oTwig = false;
-	private boolean bananaCrate = false;
-	private boolean snailSlime = false;
-	private boolean idPapers = false;
-	private int bananaCrateCount = 0;
 	private int[] degradeableHits = new int[26];
-	private ArrayList<BoneBurying.Bone> bonesGround = new ArrayList<BoneBurying.Bone>();
+	//private ArrayList<BoneBurying.Bone> bonesGround = new ArrayList<BoneBurying.Bone>();
 	private ArrayList<BoneBurying.Bone> bonesInBin = new ArrayList<BoneBurying.Bone>();
-	private boolean bonesGrinded = false;
-	private boolean secondTryAtBin = false;
+	//private boolean bonesGrinded = false;
+//	private boolean secondTryAtBin = false;
 	private int ectoWorshipCount = 0;
-	private String topHalfOfGhostsAhoyFlag = "undyed";
-	private String bottomHalfOfGhostsAhoyFlag = "undyed";
-	private String skullOfGhostsAhoyFlag = "undyed";
-	private String desiredTopHalfOfGhostsAhoyFlag = "black";
-	private String desiredBottomHalfOfGhostsAhoyFlag = "black";
-	private String desiredSkullOfGhostsAhoyFlag = "black";
-	private boolean lobsterSpawned = false;
-	private boolean petitionSigned = false;
 	private Canoe canoe = new Canoe(this);
-    private String currentChannel = null;
     private boolean homeTeleporting = false;
     private DwarfMultiCannon dwarfMultiCannon = new DwarfMultiCannon(this);
     private boolean inJail = false;
     private DesertHeat desertHeat = new DesertHeat(this);
-    
     private int castleWarsTeam = -1;
-    
     private boolean ironman = false;
+    private int minloggedout = 0;
+    
+    private ClanChat currentClanChat;
+    private boolean movementDisabled = false;
     
 	public void resetAnimation() {
 		getUpdateFlags().sendAnimation(-1);
@@ -577,6 +519,7 @@ public class Player extends Entity {
 			host = socketChannel.socket().getInetAddress().getHostAddress();
 		}
 		setPosition(new Position(Constants.START_X, Constants.START_Y, Constants.START_Z));
+		setLastPosition(new Position(Constants.START_X, Constants.START_Y, Constants.START_Z));
 		initAttributes();
 
 		// Set the default appearance.
@@ -673,6 +616,7 @@ public class Player extends Entity {
                 getPrivateMessaging().refresh(false);
                 WalkInterfaces.addWalkableInterfaces(player);
                 getActionSender().sendEnergy();
+		getMusicManager().Init();
             }
         });
     }
@@ -682,6 +626,10 @@ public class Player extends Entity {
 		{
 			SQL.saveHighScore(this);
 		}
+        if(getClanChat() != null)
+        {
+        	getClanChat().leaveChat(this, true);
+        }
         if(inPestControlLobbyArea())
         {
         	PestControl.leaveLobby(this, true);
@@ -745,8 +693,8 @@ public class Player extends Entity {
             b.stop();
             b = Benchmarks.getBenchmark("cannonUnregister");
             b.start();
-			if (getMultiCannon() != null && getMultiCannon().hasCannon()) {
-				getMultiCannon().pickupCannon();
+			if (getMultiCannon().hasCannon()) {
+				getMultiCannon().pickupCannon(true);
 			}
             b.stop();
             b = Benchmarks.getBenchmark("unlockMovement");
@@ -788,6 +736,10 @@ public class Player extends Entity {
     public void disconnect() {
         if (loginStage.compareTo(LoginStages.LOGGED_IN) > 0)
             return;
+        if(getClanChat() != null)
+        {
+        	getClanChat().leaveChat(this, true);
+        }
         if(inPestControlLobbyArea())
         {
         	PestControl.leaveLobby(this, true);
@@ -830,18 +782,18 @@ public class Player extends Entity {
 		npc.setCombatDelay(5);
 		npc.walkTo(npc.getSpawnPosition() == null ? npc.getPosition().clone() : npc.getSpawnPosition().clone(), true);
 	    }
-	    else if(attacker != null && attacker.isPlayer()) {
-		attacker.setCombatingEntity(null);
-		attacker.getMovementHandler().reset();
-	    }
         }
-        RandomEvent.resetEvents(this);
-		setLogoutTimer(System.currentTimeMillis() + 1000); //originally 600000
+		if (getRandomEventNpc() != null && !getRandomEventNpc().isDead()) {
+			NpcLoader.destroyNpc(getRandomEventNpc());
+			setRandomEventNpc(null);
+			setSpawnedNpc(null);
+		}
+		setLogoutTimer(System.currentTimeMillis() + (this.inWild() ? 600000 : 1000)); //originally 600000
         setLoginStage(LoginStages.LOGGING_OUT);
         key.attach(null);
         key.cancel();
         try {
-	    socketChannel.close();
+        	socketChannel.close();
             HostGateway.exit(host);
         } catch (Exception ex) {
 	    System.out.println("error disconnecting player");
@@ -887,6 +839,9 @@ public class Player extends Entity {
 		    actionSender.sendEnergy();
 		}
 		getDesertHeat().CheckDesertHeat();
+		if(inMortMyreSwamp() && Misc.random(150) == 1) {
+		    NatureSpirit.handleSwampRot(this);
+		}
 		if(timeOutCheck()) {
 		    disconnect();
 		}
@@ -904,85 +859,6 @@ public class Player extends Entity {
 	 */
 	public void appendPlayerPosition(int xModifier, int yModifier) {
 		getPosition().move(xModifier, yModifier);
-	}
-
-	/**
-	 * get players by host
-	 * 
-	 * 
-	 */
-/*	public void checkHosts()
-	{
-    	List<String> Hosts = new ArrayList();
-    	for (Player player : World.getPlayers()) {
-    		if(player != null)
-			{	
-    			if(!Hosts.contains(player.getHost()))
-    			{
-    				Hosts.add(player.getHost());
-    			}
-			}
-    	}
-    	List<Player[]> playersWithHost = new ArrayList();
-    	for (String validHost : Hosts) {
-    		playersWithHost.add(getPlayersByIp(validHost));
-    	}
-		getActionSender().sendInterface(8134);
-		ClearNotes();
-		int line = 8145;
-		for (String validHost : Hosts) {
-			getActionSender().sendString("@dbl@"+validHost, line);
-			line++;
-			for (Player[] players : playersWithHost) {
-				line++;
-				for (Player player : players) {
-					if(player != null)
-					{	
-						getActionSender().sendString(player.getUsername(), line);
-						line++;
-					}
-				}
-			}
-			line++;
-		}
-	}
-	
-	public Player[] getPlayersByIp(String ip)
-	{
-    	List<Player> playerWithHost = new ArrayList(); 
-    	for (Player player : World.getPlayers()) {
-    		if(player != null)
-			{	
-    			if(player.getHost().equals(ip))
-    			{
-    				playerWithHost.add(player);
-    			}
-			}
-    	}
-    	Player[] playerHosts = new Player[playerWithHost.size()];
-    	int index = 0;
-    	for (Player player : playerWithHost) {
-    		playerHosts[index] = player;
-    		index++;
-    	}
-		return playerHosts;
-	}
-	*/
-	
-	@SuppressWarnings("unused")
-	private void writeNpc(Npc npc) {
-		String filePath = "./data/npcs/spawn-config.cfg";
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(filePath, true));
-			try {
-				out.newLine();
-				out.write("spawn = "+npc.getNpcId()+"	"+npc.getPosition().getX()+"	"+npc.getPosition().getY()+"	"+npc.getPosition().getZ()+"	1	"+npc.getDefinition().getName());
-			} finally {
-				out.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void fadeTeleport(final Position position) {
@@ -1109,7 +985,7 @@ public class Player extends Entity {
 		//GlobalObjectHandler.createGlobalObject();
 		GroundItemManager.getManager().refreshLandscapeDisplay(this);
 		Npc.reloadTransformedNpcs(this);
-		getRegionMusic().playMusic(); 
+		getMusicManager().playRegionMusic();
 	}
 	
     public void demoDelayedTask() {
@@ -1125,6 +1001,7 @@ public class Player extends Entity {
 }
 	public void movePlayer(Position position) {
 		Position lastPosition = getPosition().clone();
+		setLastPosition(getPosition().clone());
 		getPosition().setAs(position);
 		getPosition().setLastX(lastPosition.getX());
 		getPosition().setLastY(lastPosition.getY());
@@ -1237,7 +1114,7 @@ public class Player extends Entity {
 		    this.getActionSender().sendUpdateServer(GlobalVariables.getServerUpdateTimer().ticksRemaining());
 		}*/
 		setLogoutTimer(System.currentTimeMillis() + 600000);
-		RandomEvent.startRandomEvent(this);
+		getRandomHandler().process();
 		setAppearanceUpdateRequired(true);
 	//	QuestHandler.initPlayer(this);
 		QuestHandler.initQuestLog(this);
@@ -1247,9 +1124,9 @@ public class Player extends Entity {
 		if(this.getPcPoints() > 10000 || this.getPcPoints() < 0) {
 		    this.setPcPoints(0, this);
 		}
-		if((this.getBananaCrate() == true && this.getBananaCrateCount() > 10) || this.getBananaCrateCount() > 10 || this.getBananaCrateCount() < 0) {
-		    this.setBananaCrate(false);
-		    this.setBananaCrateCount(0);
+		if((questVars.getBananaCrate() == true && questVars.getBananaCrateCount() > 10) || questVars.getBananaCrateCount() > 10 || questVars.getBananaCrateCount() < 0) {
+		    questVars.setBananaCrate(false);
+		    questVars.setBananaCrateCount(0);
 		}
 		int master = this.getSlayer().slayerMaster;
 		if(master != 0 && master != 70 && !(master >= 1596 && master <= 1599)) {
@@ -1258,7 +1135,7 @@ public class Player extends Entity {
 		if(this.getClayBraceletLife() > 28 || this.getClayBraceletLife() < 0) {
 		    this.setClayBraceletLife(28);
 		}
-		if(this.getFightCavesWave() > 55 || this.getFightCavesWave() < 0) {
+		if(this.getFightCavesWave() > 62 || this.getFightCavesWave() < 0) {
 		    this.setFightCavesWave(0);
 		}
 		if(this.getEctoWorshipCount() > 12 || this.getEctoWorshipCount() < 0) {
@@ -1318,26 +1195,61 @@ public class Player extends Entity {
         {
         	Castlewars.LeaveGame(this, false, 0);
         }
-	if(this.inTempleKnightsTraining()) {
-	    this.getActionSender().sendMapState(2);
-	}
-	if(ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)) != null) {
-	    ApeAtoll.handleGreeGree(this, ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)));
-	}
-	if(this.getGraveyardFruitDeposited() > 15) {
-	    this.setGraveyardFruitDeposited(15);
-	}
-	for(Player player : World.getPlayers()) {
-	    if(player != null && !this.equals(player) && player.trimHost().equals(this.trimHost())) {
-		World.messageToStaff("" + this.getUsername() + " has logged on with the same or similiar IP as " + player.getUsername() + ".");
-	    }
-	}
-	CommandHandler.appendToMacList(this, this.getMacAddress());
-	//	getCat().initChecks();
-	}
+		if(this.inTempleKnightsTraining()) {
+		    this.getActionSender().sendMapState(2);
+		}
+		if(ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)) != null) {
+		    ApeAtoll.handleGreeGree(this, ApeAtoll.GreeGreeData.forItemId(this.getEquipment().getId(Constants.WEAPON)));
+		}
+		if(this.getGraveyardFruitDeposited() > 15) {
+		    this.setGraveyardFruitDeposited(15);
+		}
+		if(this.Area(2504, 2534, 9732, 9782, 0)) {
+			PlagueCity.assessPipeGrill(this);
+		}
+		for(Player player : World.getPlayers()) {
+		    if(player != null && !this.equals(player) && player.trimHost().equals(this.trimHost())) {
+			World.messageToStaff("" + this.getUsername() + " has logged on with the same or similiar IP as " + player.getUsername() + ".");
+		    }
+		}
+	    CommandHandler.appendToMacList(this, this.getMacAddress());
+
+	    getActionSender().sendMessage("Welcome to /v/scape. There are currently " + World.playerAmount() + " players online.");
+	    getActionSender().sendMessage("Before you ask a question, check ::info and/or ::patchnotes.");
+	    getActionSender().sendMessage(Constants.LOGIN_MESSAGE);
+	    
+        if(getMinLoggedOut() > 0)
+        {
+       // 	ageCrops(getMinLoggedOut());
+        }	
+        
+		getActionSender().sendInterfaceHidden(0, 25005);
+		getActionSender().sendInterfaceHidden(1, 25015);
+		getActionSender().sendString("Talking in: Not in chat", 25002);
+		getActionSender().sendString("Owner: None", 25003);
+		for(int i = 0; i < 100; i++)
+		{
+			getActionSender().sendString("", 25122 + i);
+		}
+        if(getClanChat() != null)
+        {
+        	if(getClanChat().owner > 0) {
+        		ClanChatHandler.joinClanChat(this, getClanChat().owner);
+        	}else{
+        		setClanChat(null);
+        	}
+        }
+        if(inMimeEvent())
+        {
+        	teleport(getLastPosition());
+        }
+    }
 	
 	public boolean beginLogin() throws Exception {
 		// check login status before sql
+		if(this.getCurrentHp() <= 0) {
+			return false;
+		}
 		if (checkLoginStatus())  {
 			QuestHandler.initPlayer(this);
 			PlayerSave.load(this);
@@ -1361,7 +1273,7 @@ public class Player extends Entity {
 				return false;
 			}
 		}
-		if (getUsernameAsLong() <= 0L || getUsernameAsLong() >= 0x5b5b57f8a98a5dd1L)
+		if (getUsernameAsLong() <= 0L || getUsernameAsLong() >= 0x7dcff8986ea31000L)
 		{
 			return false;
 		}
@@ -1416,10 +1328,6 @@ public class Player extends Entity {
 					continue;
 				}
 				if (player.getUsernameAsLong() == getUsernameAsLong()) {
-					/*if(player.getMacAddress().equals(getMacAddress()))
-					{
-						player.disconnect();
-					}*/ //Bad bad bad
 					setReturnCode(Constants.LOGIN_RESPONSE_ACCOUNT_ONLINE);
 					return false;
                 }
@@ -1445,23 +1353,25 @@ public class Player extends Entity {
         		return false;
         	}
         }
-        int ipconnections = 0;
-        for(Player p : World.getPlayers())
-		{
-			if(p == null)
+        if(Constants.IP_CHECK) {
+	        int ipconnections = 0;
+	        for(Player p : World.getPlayers())
 			{
-				continue;
+				if(p == null)
+				{
+					continue;
+				}
+				if(getHost().contentEquals(p.getHost()))
+				{
+					ipconnections++;
+				}
 			}
-			if(getHost().contentEquals(p.getHost()))
-			{
-				ipconnections++;
+	        if(ipconnections >= Constants.MAX_CONNECTIONS_PER_IP)
+	        {
+				setReturnCode(Constants.LOGIN_RESPONSE_LOGIN_LIMIT_EXCEEDED);
+				return false;
 			}
-		}
-        if(ipconnections >= Constants.MAX_CONNECTIONS_PER_IP)
-        {
-			setReturnCode(Constants.LOGIN_RESPONSE_LOGIN_LIMIT_EXCEEDED);
-			return false;
-		}
+        }
         if (GlobalVariables.getServerUpdateTimer() != null) {
 			setReturnCode(Constants.LOGIN_RESPONSE_SERVER_BEING_UPDATED);
 			return false;
@@ -1870,6 +1780,10 @@ public class Player extends Entity {
 		return runeDraw;
 	}
 	
+	public GamblingDice getDice() {
+		return gamblingDice;
+	}
+	
 	public Puzzle getPuzzle() {
 		return puzzle;
 	}
@@ -1885,47 +1799,18 @@ public class Player extends Entity {
 	public BarbarianSpirits getBarbarianSpirits() {
 		return barbarianSpirits;
 	}
-	
-	public FreakyForester getFreakyForester() {
-		return freakyForester;
-	}
-	
-	public Pillory getPillory() {
-		return pillory;
-	}
-	
+
 	public GhostsAhoyPetition getPetition() {
 		return petition;
 	}
-	
-	public boolean[] getRuneDrawWins() {
-		return runeDrawWins;
-	}
-	
-	public void setRuneDrawWins(int slot, boolean bool) {
-	    this.runeDrawWins[slot] = bool;
-	}
+
 	public boolean wyvernWarned() {
 	    return this.wyvernWarned;
 	}
 	public void setWyvernWarned(boolean bool) {
 	    this.wyvernWarned = bool;
 	}
-	public boolean hasShotGrip() {
-	    return this.shotGrip;
-	}
-	public void setShotGrip(boolean bool) {
-	    this.shotGrip = bool;
-	}
-	public boolean justWonRuneDraw() {
-		return justWonRuneDraw;
-	}
-	
-	public void setJustWonRuneDraw(boolean bool) {
-	    this.justWonRuneDraw = bool;
-	}
-
-    public Slayer getSlayer() {
+	public Slayer getSlayer() {
 		return slayer;
 	}
 
@@ -2036,12 +1921,8 @@ public class Player extends Entity {
 		return agilityCourse;
 	}
 	
-	public RegionMusic getRegionMusic() {
-		return regionMusic;
-	}
-	
-	public MusicPlayer getMusicPlayer() {
-		return musicPlayer;
+	public MusicManager getMusicManager() {
+		return musicManager;
 	}
 	
 	public CombatSounds getCombatSounds() {
@@ -2090,6 +1971,10 @@ public class Player extends Entity {
 
 	public Food getFood() {
 		return food;
+	}
+	
+	public GnomeCooking getGnomeCooking() {
+		return gnomeCooking;
 	}
 
 	public Potion getPotion() {
@@ -2168,10 +2053,6 @@ public class Player extends Entity {
 		return fishing;
 	}
 
-	public InterfaceClickHandler getRandomInterfaceClick() {
-		return randomInterfaceClick;
-	}
-
 	public SkillResources getSkillResources() {
 		return skillResources;
 	}
@@ -2187,7 +2068,11 @@ public class Player extends Entity {
 	public MonkeyMadnessVars getMMVars() {
 		return MMVars;
 	}
-
+	
+	public QuestVariables getQuestVars() {
+		return questVars;
+	}
+	
 	public void setPrivateMessaging(PrivateMessaging privateMessaging) {
 		this.privateMessaging = privateMessaging;
 	}
@@ -2337,7 +2222,7 @@ public class Player extends Entity {
 		isDrunk = state;
 		if(isDrunk)
 		{
-			drunkTimer = time;
+			setDrunkTimer(time);
 			setStandAnim(3040);
 			setWalkAnim(2769);
 			setRunAnim(2769);
@@ -2455,88 +2340,6 @@ public class Player extends Entity {
 	    this.tokenTime = set;
 	}
 	
-	public boolean isPhoenixGang() {
-	    return phoenixGang;
-	}
-	public void joinPhoenixGang(boolean bool) {
-	    if(this.isBlackArmGang()) this.phoenixGang = false;
-	    else this.phoenixGang = bool;
-	}
-	
-	public boolean isBlackArmGang() {
-	    return blackArmGang;
-	}
-	public void joinBlackArmGang(boolean bool) {
-	    if(this.isPhoenixGang()) this.blackArmGang = false;
-	    else this.blackArmGang = bool;
-	}
-	public boolean hasPlacedOTwig() {
-	    return oTwig;
-	}
-	public void setPlacedOTwig(boolean bool) {
-	    this.oTwig = bool;
-	}
-	public boolean hasPlacedZTwig() {
-	    return zTwig;
-	}
-	public void setPlacedZTwig(boolean bool) {
-	    this.zTwig = bool;
-	}
-	public boolean hasPlacedUTwig() {
-	    return uTwig;
-	}
-	public void setPlacedUTwig(boolean bool) {
-	    this.uTwig = bool;
-	}
-	public boolean hasPlacedTTwig() {
-	    return tTwig;
-	}
-	public void setPlacedTTwig(boolean bool) {
-	    this.tTwig = bool;
-	}
-	public boolean getShipyardGateOpen() {
-	    return shipyardGate;
-	}
-	public void setShipyardGateOpen(boolean bool) {
-	    this.shipyardGate = bool;
-	}
-	public boolean getMelzarsDoorUnlock() {
-	    return melzarsDoor;
-	}
-	
-	public void setMelzarsDoorUnlock(boolean bool) {
-	    this.melzarsDoor = bool;
-	}
-	public boolean givenIdPapers() {
-	    return idPapers;
-	}
-	
-	public void setGivenIdPapers(boolean bool) {
-	    this.idPapers = bool;
-	}
-	public boolean givenSnailSlime() {
-	    return snailSlime;
-	}
-	
-	public void setGivenSnailSlime(boolean bool) {
-	    this.snailSlime = bool;
-	}
-	public boolean getBananaCrate() {
-	    return bananaCrate;
-	}
-	
-	public void setBananaCrate(boolean bool) {
-	    this.bananaCrate = bool;
-	}
-	
-	public int getBananaCrateCount() {
-	    return bananaCrateCount;
-	}
-	
-	public void setBananaCrateCount(int count) {
-	    this.bananaCrateCount = count;
-	}
-	
 	public int getFightCavesWave() {
 	    return fightCavesWave;
 	}
@@ -2571,152 +2374,6 @@ public class Player extends Entity {
 	public Ectofuntus getEctofuntus() {
 	    return this.ectofuntus;
 	}
-	public String getTopHalfFlag() {
-	    return topHalfOfGhostsAhoyFlag;
-	}
-	public String getBottomHalfFlag() {
-	    return bottomHalfOfGhostsAhoyFlag;
-	}
-	public String getSkullFlag() {
-	    return skullOfGhostsAhoyFlag;
-	}
-	public String getDesiredTopHalfFlag() {
-	    return desiredTopHalfOfGhostsAhoyFlag;
-	}
-	public String getDesiredBottomHalfFlag() {
-	    return desiredBottomHalfOfGhostsAhoyFlag;
-	}
-	public String getDesiredSkullFlag() {
-	    return desiredSkullOfGhostsAhoyFlag;
-	}
-	public boolean lobsterSpawnedAndDead() {
-	    return lobsterSpawned;
-	}
-	public void setLobsterSpawnedAndDead(boolean bool) {
-	    this.lobsterSpawned = bool;
-	}
-	public boolean petitionSigned() {
-	    return petitionSigned;
-	}
-	public void setPetitionSigned(boolean bool) {
-	    this.petitionSigned = bool;
-	}
-	public void dyeGhostsAhoyFlag(String part, String color) {
-	    if(color == null || color.length() > 30) return;
-	    switch(part) {
-		case "topHalf":
-		case "top":
-		    this.topHalfOfGhostsAhoyFlag = color;
-		    return;
-		case "bottomHalf":
-		case "bottom":
-		    this.bottomHalfOfGhostsAhoyFlag = color;
-		    return;
-		case "skull":
-		    this.skullOfGhostsAhoyFlag = color;
-		    return;	
-	    }
-	}
-	public void setDesiredGhostsAhoyFlag(String part, String color) {
-	    if(color == null || color.length() > 30) return;
-	    switch(part) {
-		case "topHalf":
-		case "top":
-		    this.desiredTopHalfOfGhostsAhoyFlag = color;
-		    return;
-		case "bottomHalf":
-		case "bottom":
-		    this.desiredBottomHalfOfGhostsAhoyFlag = color;
-		    return;
-		case "skull":
-		    this.desiredSkullOfGhostsAhoyFlag = color;
-		    return;	
-	    }
-	}
-	public boolean usedFreeGauntletsCharge() {
-	    return usedFreeGauntletsCharge;
-	}
-	public void setHasUsedFreeGauntletsCharge(boolean bool) {
-	    this.usedFreeGauntletsCharge = bool;
-	}
-	public boolean hasHitChronozonWind() {
-	    return chronozonWind;
-	}
-	public void setHitChronozonWind(boolean bool) {
-	    this.chronozonWind = bool;
-	}
-	public boolean hasHitChronozonWater() {
-	    return chronozonWater;
-	}
-	public void setHitChronozonWater(boolean bool) {
-	    this.chronozonWater = bool;
-	}
-	public boolean hasHitChronozonEarth() {
-	    return chronozonEarth;
-	}
-	public void setHitChronozonEarth(boolean bool) {
-	    this.chronozonEarth = bool;
-	}
-	public boolean hasHitChronozonFire() {
-	    return chronozonFire;
-	}
-	public void setHitChronozonFire(boolean bool) {
-	    this.chronozonFire = bool;
-	}
-	public boolean northPerfectGoldMineLever() {
-	    return northLever;
-	}
-	public void setNorthPerfectGoldMineLever(boolean bool) {
-	    this.northLever = bool;
-	}
-	public boolean southPerfectGoldMineLever() {
-	    return southLever;
-	}
-	public void setSouthPerfectGoldMineLever(boolean bool) {
-	    this.southLever = bool;
-	}
-	public boolean northRoomPerfectGoldMineLever() {
-	    return northRoomLever;
-	}
-	public void setNorthRoomPerfectGoldMineLever(boolean bool) {
-	    this.northRoomLever = bool;
-	}
-	public boolean hasPlacedFireRune() {
-	    return placedFireRune;
-	}
-	public void setPlacedFireRune(boolean bool) {
-	    placedFireRune = bool;
-	}
-	public boolean hasPlacedWaterRune() {
-	    return placedWaterRune;
-	}
-	public void setPlacedWaterRune(boolean bool) {
-	    placedWaterRune = bool;
-	}
-	public boolean hasPlacedEarthRune() {
-	    return placedEarthRune;
-	}
-	public void setPlacedEarthRune(boolean bool) {
-	    placedEarthRune = bool;
-	}
-	public boolean hasPlacedAirRune() {
-	    return placedAirRune;
-	}
-	public void setPlacedAirRune(boolean bool) {
-	    placedAirRune = bool;
-	}
-	public boolean hasPlacedSword() {
-	    return placedSword;
-	}
-	public void setPlacedSword(boolean bool) {
-	    placedSword = bool;
-	}
-	public boolean hasPlacedArrow() {
-	    return placedArrow;
-	}
-	public void setPlacedArrow(boolean bool) {
-	    placedArrow= bool;
-	}
 	public int getGodBook() {
 	    return godBook;
 	}
@@ -2728,18 +2385,6 @@ public class Player extends Entity {
 	}
 	public void setLostGodBook(int set) {
 	    this.lostGodBook = set;
-	}
-	public int getRailingsFixed() {
-	    return this.railingsFixed;
-	}
-	public void setRailingsFixed(int set) {
-	    this.railingsFixed = set;
-	}
-	public void addRailingsFixed(int fixed) {
-	    railings.add(fixed);
-	}
-	public ArrayList<Integer> getRailingsArray() {
-	    return this.railings;
 	}
 	public DwarfMultiCannon getMultiCannon(){
 		return dwarfMultiCannon;
@@ -2873,7 +2518,7 @@ public class Player extends Entity {
 	}
 
 	public void addToServerPoints(int serverPoints) {
-		actionSender.sendMessage("You have recieved " + serverPoints + " server points!");
+		actionSender.sendMessage("You have received " + serverPoints + " server points!");
 		this.serverPoints += serverPoints;
 	}
 
@@ -2899,14 +2544,6 @@ public class Player extends Entity {
 
 	public boolean[] getIsUsingPrayer() {
 		return isUsingPrayer;
-	}
-	
-	public void setErnestLevers(int slot, boolean bool) {
-		this.ernestLevers[slot] = bool;
-	}
-
-	public boolean[] getErnestLevers() {
-		return ernestLevers;
 	}
 	
 	public void setHurkotsSpawned(boolean bool) {
@@ -3038,14 +2675,6 @@ public class Player extends Entity {
 
 	public void setEffectVolume(int effectVolume) {
 		this.effectVolume = effectVolume;
-	}
-	
-	public int getBallistaIndex() {
-	    return this.ballistaIndex;
-	}
-	
-	public void setBallistaIndex(int set) {
-	    this.ballistaIndex = set;
 	}
 	
 	public boolean getCanHaveGodCape() {
@@ -3366,14 +2995,6 @@ public class Player extends Entity {
 		this.voidMace = voidMace;
 	}
 	
-	public boolean isGazeOfSaradomin() {
-	    return this.gazeOfSaradomin;
-	}
-	
-	public void setGazeOfSaradomin(boolean set) {
-	    this.gazeOfSaradomin = set;
-	}
-	
 	public boolean wearingCwBracelet(){
 		int brace = getEquipment().getId(Constants.HANDS);
 		return brace == 11079 || brace == 11081 || brace == 11083;
@@ -3691,6 +3312,12 @@ public class Player extends Entity {
 		PriorityQueue<Item> allItems = new PriorityQueue<Item>(1, new Comparator<Item>() {
 			@Override
 			public int compare(Item a, Item b) {
+			    if(Degradeables.getDegradeableItem(a) != null) {
+				a = new Item(Degradeables.getDegradeableItem(a).getOriginalId());
+			    }
+			    if(Degradeables.getDegradeableItem(b) != null) {
+				b = new Item(Degradeables.getDegradeableItem(b).getOriginalId());
+			    }
 				return ItemDefinition.forId(b.getId()).getHighAlcValue() - ItemDefinition.forId(a.getId()).getHighAlcValue();
 			}
 		});
@@ -3713,22 +3340,20 @@ public class Player extends Entity {
 
 	@Override
 	public void dropItems(Entity killer) {
+		boolean noDropItems = false;
+		if(Constants.DDOS_PROTECT_MODE) {
+			return;
+		}
 		if (inDuelArena() || creatureGraveyard.isInCreatureGraveyard() || inPestControlLobbyArea() || inPestControlGameArea() || onPestControlIsland() || inFightCaves()) {
 			return; //prevents the dropping of items
 		}
 		if (inCwGame() || this.Area(2754, 2814, 3833, 3873)) {
 			return; //prevents the dropping of items
 		}
-		if (killer == null) {
-			killer = this;
+		if(killer == null && this.getTimeoutStopwatch().elapsed() < 5000) {
+			noDropItems = true;
 		}
-		if (killer.isNpc() ) {
-			killer = this;
-		}
-	/*	if (!killer.isPlayer()) {
-			killer = this;
-		}*/
-		if(getLoginStage() != LoginStages.LOGGED_IN)
+		if(!this.inWild() && getLoginStage() != LoginStages.LOGGED_IN)
 		{
 			return;
 		}
@@ -3736,16 +3361,17 @@ public class Player extends Entity {
 		System.arraycopy(equipment.getItemContainer().getItems(), 0, items, 0, equipment.getItemContainer().getItems().length);
 		System.arraycopy(inventory.getItemContainer().getItems(), 0, items, equipment.getItemContainer().getItems().length, inventory.getItemContainer().getItems().length);
 		ArrayList<Item> keptItems = getItemsKeptOnDeath(items);
+		ArrayList<Integer> alwaysProtect = new ArrayList<>();
 		List<Item> allItems = new ArrayList<Item>(Arrays.asList(items));
 		for(int i = 0; i < Pets.PET_IDS.length; i++) {
 		    if(inventory.playerHasItem(new Item(Pets.PET_IDS[i][0])) )
-				keptItems.add(new Item(Pets.PET_IDS[i][0]));
+				alwaysProtect.add(Pets.PET_IDS[i][0]);
 		}
 		if(inventory.playerHasItem(FightCaves.FIRE_CAPE) || equipment.getId(Constants.CAPE) == FightCaves.FIRE_CAPE) {
-		    keptItems.add(new Item(FightCaves.FIRE_CAPE));
+		    alwaysProtect.add(FightCaves.FIRE_CAPE);
 		}
 		if(inventory.playerHasItem(7462) || equipment.getId(Constants.HANDS) == 7462) {
-		    keptItems.add(new Item(7462));
+		    alwaysProtect.add(7462);
 		}
 		for (Item kept : keptItems) {
 			if (kept == null)
@@ -3764,28 +3390,50 @@ public class Player extends Entity {
 		}
 		equipment.getItemContainer().clear();
 		inventory.getItemContainer().clear();
+		if(killer == null) {
+			killer = this;
+		}
+		GroundItemManager.getManager().dropItem(new GroundItem(new Item(526, 1), this, killer, getDeathPosition()));
 		for (Item kept : keptItems)
 			inventory.addItem(kept);
-		for (Item dropped : allItems) {
-			if (dropped == null)
-				continue;
-			for(int i = 0; i < Pets.PET_IDS.length; i++) {
-			    if(dropped.getId() == Pets.PET_IDS[i][0])
-				inventory.addItem(dropped);
+		for (int i : alwaysProtect) {
+		    boolean alreadyKept = false;
+		    for(Item kept : keptItems) {
+			if(kept.getId() == i) {
+			    alreadyKept = true;
 			}
-			if(dropped.getId() == this.getGodBook()) {
-			    this.setLostGodBook(this.getGodBook());
-			}
-			if(Degradeables.notDroppable(Degradeables.getDegradeableItem(dropped), dropped) && Constants.DEGRADING_ENABLED) {
-				GroundItemManager.getManager().dropItem(new GroundItem(new Item(Degradeables.getDegradeableItem(dropped).getBrokenId()), killer));
-				setDegradeableHits(Degradeables.getDegradeableItem(dropped).getPlayerArraySlot(), 0);
-			}
-			else if (!dropped.getDefinition().isUntradable()) {
-				GroundItem item = new GroundItem(new Item(dropped.getId(), dropped.getCount()), this, killer, getDeathPosition());
-				GroundItemManager.getManager().dropItem(item);
-			} else {
-				GroundItem item = new GroundItem(new Item(dropped.getId(), dropped.getCount()), this, getDeathPosition());
-				GroundItemManager.getManager().dropItem(item);
+		    }
+		    if(!alreadyKept) {
+			inventory.addItem(new Item(i));
+		    }
+			
+		}
+		if (!noDropItems) {
+			for (Item dropped : allItems) {
+				if (dropped == null) {
+					continue;
+				}
+				if (alwaysProtect.contains(dropped.getId())) {
+					continue;
+				}
+				if (dropped.getId() >= 3839 && dropped.getId() <= 3844) {
+					this.setLostGodBook(dropped.getId());
+				}
+				if (Degradeables.notDroppable(Degradeables.getDegradeableItem(dropped), dropped) && Constants.DEGRADING_ENABLED) {
+					GroundItemManager.getManager().dropItem(new GroundItem(new Item(Degradeables.getDegradeableItem(dropped).getBrokenId()), killer));
+					setDegradeableHits(Degradeables.getDegradeableItem(dropped).getPlayerArraySlot(), 0);
+				} else if (!dropped.getDefinition().isUntradable()) {
+					GroundItem item = new GroundItem(new Item(dropped.getId(), dropped.getCount()), this, killer, getDeathPosition());
+					GroundItemManager.getManager().dropItem(item);
+				} else {
+					if (dropped.getId() == 11283) {
+						GroundItem item = new GroundItem(new Item(11284, dropped.getCount()), this, getDeathPosition());
+						GroundItemManager.getManager().dropItem(item);
+					} else {
+						GroundItem item = new GroundItem(new Item(dropped.getId(), dropped.getCount()), this, getDeathPosition());
+						GroundItemManager.getManager().dropItem(item);
+					}
+				}
 			}
 		}
 		equipment.refresh();
@@ -3822,12 +3470,11 @@ public class Player extends Entity {
 		if (spell == null) {
 			getActionSender().resetAutoCastInterface();
 			this.autoCasting = false;
-		} 
-		else if(hasVoidMace() && spell == Spell.CLAWS_OF_GUTHIX) {
+		} else if (hasVoidMace() && spell == Spell.CLAWS_OF_GUTHIX) {
 		    	getActionSender().sendSidebarInterface(0, 3796);
 			getActionSender().updateAutoCastInterface(spell);
 			this.autoCasting = true;
-		}else {
+		} else {
 			getActionSender().sendSidebarInterface(0, 328);
 			getActionSender().updateAutoCastInterface(spell);
 			this.autoCasting = true;
@@ -4002,9 +3649,11 @@ public class Player extends Entity {
 		resetEffectTimers();
 		resetImmuneTimers();
 		effects.clear();
+		removeAllEffects();
 		int skills[] = getSkill().getLevel();
 		for (int i = 0; i < skills.length; i++)
 			getSkill().setSkillLevel(i, getSkill().getPlayerLevel(i));
+		getSkill().refresh();
     }
    
     public boolean logoutDisabled() {
@@ -4037,21 +3686,6 @@ public class Player extends Entity {
 
 	public enum LoginStages {
 		CONNECTED, LOGGING_IN, AWAITING_LOGIN_COMPLETE, LOGGED_IN, LOGGING_OUT, LOGGED_OUT
-	}
-
-	public void appendToBugList(String bug) {
-		String filePath = "./data/bugs.txt";
-		try {
-			BufferedWriter out = new BufferedWriter(new FileWriter(filePath, true));
-			try {
-				out.write("Bug reported by " + getUsername() + " about : " + bug);
-				out.newLine();
-			} finally {
-				out.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void appendToAutoSpawn(NpcDefinition npc) {
@@ -4150,6 +3784,9 @@ public class Player extends Entity {
 	}
 
 	public boolean npcCanAttack(Npc npc) {
+		if (npc.getNpcId() == 1052) {
+		    return npc.getCombatingEntity() == null;
+		}
 		if (npc.isAttacking() || !npc.getDefinition().isAttackable()) {
 			return false;
 		}
@@ -4181,19 +3818,28 @@ public class Player extends Entity {
 	}
 
 	public void checkNpcAggressiveness() {
+		if(Constants.DDOS_PROTECT_MODE || getStaffRights() >= 3) {
+			return;
+		}
 		if (!getInCombatTick().completed() && !inMulti()) {
 			return;
 		}
 		for (Npc npc : getNpcs()) {
+			if (npc == null) {
+				continue;
+			}
+			if (npc.isDead()) {
+				continue;
+			}
 			if (npc.getPlayerOwner() != null) {
 				continue;
 			}
 			if(onApeAtoll() && npc.onApeAtoll()) {
-			    if (npc.getNpcId() == MonkeyMadness.MONKEYS_AUNT && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), true) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey()) {
+			    if ((npc.getNpcId() == MonkeyMadness.MONKEYS_AUNT || npc.getNpcId() == MonkeyMadness.AWOWOGEI) && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), true) && !getMMVars().inProcessOfBeingJailed && !getMMVars().isMonkey()) {
 				npc.getUpdateFlags().setForceChatMessage("OOH! OOH! AAH!");
 				ApeAtoll.jail(this, true);
 			    }
-			    if (npc.getNpcId() == 1457 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && ApeAtoll.hiddenInGrass(this) && npc.isAttacking()) {
+			    if (npc.getNpcId() == 1457 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && Misc.checkClip(npc.getPosition(), getPosition(), true) && ApeAtoll.hiddenInGrass(this) && npc.isAttacking()) {
 				CombatManager.resetCombat(npc);
 			    }
 			    if (npc.getNpcId() == 1458 && Misc.goodDistance(npc.getPosition(), getPosition(), 5) && !Area(2762, 2767, 2767, 2772) && npc.isAttacking()) {
@@ -4223,6 +3869,9 @@ public class Player extends Entity {
 			if (!npcCanAttack(npc)) {
 				continue;
 			}
+			if (Misc.goodDistance(npc.getPosition(), getPosition(), 7) && npc.getNpcId() >= 2881 && npc.getNpcId() <= 2883 && npc.getCombatingEntity() == null) {
+			    CombatManager.attack(npc, this);
+			}
 			if (Misc.goodDistance(npc.getSpawnPosition(), getPosition(), npc.getNpcId() == 1266 || npc.getNpcId() == 1268 || npc.getNpcId() == 2453 || npc.getNpcId() == 2890 ? 1 : 4)) {
 			//if (npc.getWalkableArea().contains(getPosition().getX(), getPosition().getY())) {
 				CombatCycleEvent.CanAttackResponse response = CombatCycleEvent.canAttack(npc, this);
@@ -4242,6 +3891,9 @@ public class Player extends Entity {
 				}
 				if (npc.getTransformTimer() < 1 && npc.isTransformOnAggression() > 0) {
 					npc.sendTransform(npc.isTransformOnAggression(), 999999);
+				}
+				if (npc.getNpcId() == 1052) {
+					npc.getUpdateFlags().setForceChatMessage("OOooooohhh");
 				}
 				CombatManager.attack(npc, this);
 				return;
@@ -4282,6 +3934,22 @@ public class Player extends Entity {
 	 */
 	public boolean isHamTrapDoor() {
 		return hamTrapDoor;
+	}
+	
+	/*
+	@param inCutscene
+	    BOOLEAN TO SET IF U R IN CUTSCEEN
+	*/
+	public void setInCutscene(boolean set) {
+		this.inCutscene = set;
+	}
+	
+	/*
+	@return inCutscene
+	    RETURNS IF PLAYER IN CUTSCEEN OR NO?
+	*/
+	public boolean isInCutscene() {
+		return inCutscene;
 	}
 
 	public int getClientVersion() {
@@ -4453,60 +4121,20 @@ public class Player extends Entity {
     
     public boolean isIpBanned() 
     {
-        File file = new File("./data/bannedips.txt");
         if(getHost().length() <= 0)
         {
         	return false;
         }
-        if (!file.exists()) {
-            return false;
-        }
-        try {
-        	String CurrentLine;
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            while ((CurrentLine = br.readLine()) != null) 
-            {
-            	if(CurrentLine.length() > 0)
-            	{
-					if(CurrentLine.trim().contentEquals(getHost()))
-					{
-						br.close();
-						return true;
-					}
-            	}
-			}
-			br.close();
-        } catch (IOException e) {
-        	return false;
-	    }
-        return false;
+    	return GlobalVariables.isIpBanned(getHost());
     }
     
     public boolean isMacBanned() 
     {
-        File file = new File("./data/bannedmacs.txt");
-        if (!file.exists()) {
-            return false;
-        }
-        try {
-        	String CurrentLine;
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            while ((CurrentLine = br.readLine()) != null) 
-            {
-            	if(CurrentLine.length() > 0)
-            	{
-					if(CurrentLine.trim().contentEquals(getMacAddress()))
-					{
-						br.close();
-						return true;
-					}
-            	}
-			}
-			br.close();
-        } catch (IOException e) {
+        if(getMacAddress().length() <= 0)
+        {
         	return false;
-	    }
-        return false;
+        }
+    	return GlobalVariables.isMacBanned(getMacAddress());
     }
 
 	/**
@@ -4689,14 +4317,22 @@ public class Player extends Entity {
 	public void setSlot(int slot) {
 		this.slot = slot;
 	}
-
+	
 	/**
 	 * @return the slot
 	 */
 	public int getSlot() {
 		return slot;
 	}
-
+	
+	public void setEquipmentOperate(boolean val) {
+		equipmentOperate = val;
+	}
+	
+	public boolean getEquipmentOperate() {
+		return equipmentOperate;
+	}
+	
 	/**
 	 * @param brimhavenDungeonOpen the brimhavenDungeonOpen to set
 	 */
@@ -4964,10 +4600,10 @@ public class Player extends Entity {
 		getActionSender().sendString("", 12389); //mountain daughter
 		getActionSender().sendString("", 13974); //mourning's end pt 1
 		getActionSender().sendString("", 7370); //murder mystery
-		getActionSender().sendString("", 8137); //nature spirit
+		getActionSender().sendString("@red@Nature Spirit", 8137); //nature spirit
 		getActionSender().sendString("", 7371); //observatory quest
 		getActionSender().sendString("", 12345); //one small favour
-		getActionSender().sendString("", 7372); //plague city
+		getActionSender().sendString("@red@Plague City", 7372); //plague city
 		getActionSender().sendString("@red@Priest in Peril", 8115); //priest in peril
 		// unknown id
 		getActionSender().sendString("", 8576); //regicide
@@ -5024,9 +4660,7 @@ public class Player extends Entity {
     public boolean getHideYell(){
     	return hideYell;
     }
-    public String getCurrentchannel(){
-    	return currentChannel;
-    }
+
     public boolean getHideColors()
     {
     	return hideColors;
@@ -5044,35 +4678,6 @@ public class Player extends Entity {
 			}
 		}
 	}
- 
-		public String getClanChannel(){
-			return currentChannel;
-		}
-        public void setClanChannel(String channel) {
-		String inChannel = channel;
-                
-                    for(int i = 0; i < Constants.bad.length; i++){
-			if(channel.toLowerCase().contains(Constants.bad[i])){
-				getActionSender().sendMessage("You are trying to make a channel you shouldn't make!");
-				return;
-			}
-		}
-                                
-                                if(currentChannel == null){
-				getActionSender().sendMessage(
-						"You have joined " + channel +".");
-                                currentChannel = channel;
-                                }else{
-                                getActionSender().sendMessage(
-						"You are already in " + currentChannel + "!");
-                                }
-			}
-	
-        public void leaveClanChannel(){
-           getActionSender().sendMessage("You have left " + currentChannel + ".");
-           currentChannel = null;
-        }
-
         
 	public void setHideColors(boolean hide, boolean msg) {
 		hideColors = hide;
@@ -5086,4 +4691,87 @@ public class Player extends Entity {
 			}
 		}
 	}
+
+	public void setTimeLoggedOut(String asString) {
+		String dateStop = GlobalVariables.datetime.format(new Date());
+	    Date d1 = null;
+	    Date d2 = null;
+	    try {
+	        d1 = GlobalVariables.datetime.parse(asString);
+	        d2 = GlobalVariables.datetime.parse(dateStop);
+	    } catch (ParseException e) {
+	        e.printStackTrace();
+	    }
+	    long diff = d2.getTime() - d1.getTime();
+	    long diffMinutes = diff / (60 * 1000) % 60;
+	  //  long diffHours = diff / (60 * 60 * 1000);
+	    
+	    //System.out.println("Time in minutes: " + diffMinutes + " minutes.");
+	    //System.out.println("Time in hours: " + diffHours + " hours.");
+	    
+	    minloggedout = (int) diffMinutes;
+	}
+	
+	public int getMinLoggedOut()
+	{
+		return minloggedout;
+	}
+	
+	public void ageCrops(int mintoage)
+	{
+		System.out.println("Aging crops " + mintoage + "min");
+		if(mintoage > 960)
+		{
+			mintoage = 960;
+		}
+		for(int k = 0; k <= (mintoage*2); k++)
+		{
+			getAllotment().processGrowth();
+			getFlowers().processGrowth();
+			getHerbs().processGrowth();
+			getHops().processGrowth();
+			getBushes().processGrowth();
+			getTrees().processGrowth();
+			getFruitTrees().processGrowth();
+			getSpecialPlantOne().doCalculations();
+			getSpecialPlantTwo().doCalculations();
+		}
+	}
+
+	public int getDrunkTimer() {
+		return drunkTimer;
+	}
+
+	public void setDrunkTimer(int drunkTimer) {
+		this.drunkTimer = drunkTimer;
+	}
+
+	public int getInnoculationBraceletLife() {
+		return innoculationBraceletLife;
+	}
+
+	public void setInnoculationBraceletLife(int innoculationBraceletLife) {
+		this.innoculationBraceletLife = innoculationBraceletLife;
+	}
+
+	public ClanChat getClanChat() {
+		return currentClanChat;
+	}
+
+	public void setClanChat(ClanChat currentClanChat) {
+		this.currentClanChat = currentClanChat;
+	}
+
+	public RandomHandler getRandomHandler() {
+		return randomHandler;
+	}
+	
+	public void setMovementDisabled(boolean state){
+		movementDisabled = state;
+	}
+	
+	public boolean getMovementDisabled(){
+		return movementDisabled;
+	}
+
 }

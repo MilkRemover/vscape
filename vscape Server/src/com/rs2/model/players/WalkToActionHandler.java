@@ -2,7 +2,6 @@ package com.rs2.model.players;
 
 import com.rs2.Constants;
 import com.rs2.cache.object.GameObjectData;
-import com.rs2.model.Graphic;
 import com.rs2.model.Position;
 import com.rs2.model.World;
 import com.rs2.model.content.Following;
@@ -19,14 +18,12 @@ import com.rs2.model.content.minigames.duelarena.GlobalDuelRecorder;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
 import com.rs2.model.content.minigames.magetrainingarena.MageRewardHandling;
 import com.rs2.model.content.minigames.pestcontrol.*;
-import com.rs2.model.content.quests.GhostsAhoy;
-import com.rs2.model.content.quests.HeroesQuest;
-import com.rs2.model.content.quests.HorrorFromTheDeep;
-import com.rs2.model.content.quests.MerlinsCrystal;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
-import com.rs2.model.content.quests.PiratesTreasure;
-import com.rs2.model.content.quests.PriestInPeril;
-import com.rs2.model.content.quests.Quest;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.HeroesQuest;
+import com.rs2.model.content.quests.impl.InSearchOfTheMyreque;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.PiratesTreasure;
+
 import com.rs2.model.content.skills.Menus;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.SkillHandler;
@@ -84,8 +81,9 @@ import com.rs2.model.tick.Tick;
 import com.rs2.util.Misc;
 import com.rs2.util.clip.Rangable;
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.TreeGnomeVillage;
-import com.rs2.model.content.randomevents.FreakyForester;
+import com.rs2.model.content.quests.impl.Quest;
+import com.rs2.model.content.quests.impl.TheGrandTree;
+import com.rs2.model.content.quests.impl.UndergroundPass.PassObjectHandling;
 import com.rs2.model.content.randomevents.SpawnEvent;
 import com.rs2.model.content.skills.agility.Agility;
 import com.rs2.model.content.skills.firemaking.BarbarianSpirits;
@@ -100,7 +98,6 @@ import java.util.Random;
 public class WalkToActionHandler {
 
 	private static Actions actions = Actions.OBJECT_FIRST_CLICK;
-	private int test;
 	
 	public static void doActions(Player player) {
 		switch (actions) {
@@ -141,7 +138,7 @@ public class WalkToActionHandler {
 		final int id = player.getClickId();
 		final int x = player.getClickX();
 		final int y = player.getClickY();
-		final int z = player.getClickZ();
+		final int z = player.getClickZ()%4;
 		final String objectName = GameObjectData.forId(id) != null ? GameObjectData.forId(id).getName().toLowerCase() : "";
 		final int task = player.getTask();
 		World.submit(new Tick(1, true) {
@@ -156,7 +153,7 @@ public class WalkToActionHandler {
 				}
 				GameObjectDef def = SkillHandler.getObject(id, x, y, z);
 				if (def == null) { // Server.npcHandler.getNpcByLoc(Location.create(x,
-					if (id == 2142 || id == 2297 || id == 4879 || (id >= 7272 && id <= 7287)  || id == 4766 || id == 4880 || id == 4881 || id == 5015 || id == 2311 || id == 2294 || id == 2295 || id == 2296 || id == 2022 || id == 9293  || id == 9328 || id == 2834 || id == 9330 || id == 9322 || id == 9324 || id == 2332 || id == 3933 || (id == 3203 || id == 4616 || id == 4615) || (id == 2213 && x == 3513) || (id == 356 && y == 3507) || GameObjectData.forId(id).getName().toLowerCase().contains("gangplank") || (id >= 14227 && id <= 14231)) { //exceptions
+					if (id == 2142 || id == 2297 || id == 4879 || (id >= 7272 && id <= 7287)  || id == 5003 || id == 4766 || id == 5002 || id == 3522 || id == 4880 || id == 4881 || id == 5015 || id == 2311 || id == 2294 || id == 2295 || id == 2296 || id == 2022 || id == 9293  || id == 9328 || id == 2834 || id == 9330 || id == 9322 || id == 9324 || id == 2332 || id == 3931 || id == 3932 || id == 3933 || (id == 3203 || id == 4616 || id == 4615) || (id == 2213 && x == 3513) || (id == 356 && y == 3507) || GameObjectData.forId(id).getName().toLowerCase().contains("gangplank") || (id >= 14227 && id <= 14231)) { //exceptions
 						def = new GameObjectDef(id, 10, 0, new Position(x, y, z));
 					} else if (id == 4381 || id == 4382 || id == 4385 || id == 4386) { //exceptions
 						def = new GameObjectDef(id, 11, 0, new Position(x, y, z));
@@ -171,9 +168,18 @@ public class WalkToActionHandler {
 				GameObjectData object = GameObjectData.forId(player.getClickId());
 				Position objectPosition;
 				objectPosition = Misc.goodDistanceObject(def.getPosition().getX(), def.getPosition().getY(), player.getPosition().getX(), player.getPosition().getY(), object.getSizeX(def.getFace()), object.getSizeY(def.getFace()), z);
-				if (objectPosition == null)
+				
+				if(id != 1729 && id != 2290 && id != 3340) {
+				    if (objectPosition == null) {
 					return;
-				if (!canInteractWithObject(player, objectPosition, def)) {
+				    }
+				}
+				if(id != 1729 && id != 2290) {
+				    if (!canInteractWithObject(player, objectPosition, def)) {
+					stop();
+					return;
+				    }
+				} else if(!canInteractWithObject(player, def.getPosition(), def)) {
 					stop();
 					return;
 				}
@@ -210,6 +216,16 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
+				if(PassObjectHandling.doObstacleClicking(player, id, x, y)) {
+					this.stop();
+					return;
+				}
+				if(player.getRandomHandler().getCurrentEvent() != null) {
+					if(player.getRandomHandler().getCurrentEvent().doObjectClicking(id, x, y, z)) {
+						this.stop();
+						return;
+					}
+				}
 				if (ObeliskTick.clickObelisk(id)) {
 					this.stop();
 					return;
@@ -227,53 +243,6 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				if(x == 2763 && y == 3402 && player.getClickId() == 71) {
-				    if(player.getQuestStage(11) < 6) {
-					player.getDialogue().sendStatement("These doors are locked.");
-					this.stop();
-					return;
-				    }
-				    else {
-					player.getActionSender().walkTo(player.getPosition().getX() == 2764 ? -1 : 1, 0, true);
-					player.getActionSender().walkThroughDoubleDoor(71, 72, 2763, 3402, 2763, 3401, 0);
-					this.stop();
-					return;
-				    }
-				}
-				if(x == 2763 && y == 3401 && player.getClickId() == 72) {
-				    if(player.getQuestStage(11) < 6) {
-					player.getDialogue().sendStatement("These doors are locked.");
-					this.stop();
-					return;
-				    }
-				    else {
-					player.getActionSender().walkTo(player.getPosition().getX() == 2764 ? -1 : 1, 0, true);
-					player.getActionSender().walkThroughDoubleDoor(71, 72, 2763, 3402, 2763, 3401, 0);
-					this.stop();
-					return;
-				    }
-				}
-				if(x == 3016 && y == 3246 && player.getClickId() == 59) {
-				    if(player.getQuestStage(11) == 7) {
-					if(!MerlinsCrystal.beggarSpawned()) {
-					    Npc npc = new Npc(252);
-					    npc.setPosition(new Position(3016, 3253, 0));
-					    npc.setSpawnPosition(player.getPosition().clone());
-					    World.register(npc);      
-					    npc.setFollowingEntity(player);
-					    npc.setPlayerOwner(player.getIndex());
-					}
-					Dialogues.startDialogue(player, 252);
-					this.stop();
-					return;
-				    }
-				    else {
-					player.getActionSender().walkTo(player.getPosition().getX() > 3015 ? -1 : 1, 0, true);
-					player.getActionSender().walkThroughDoor(59, 3016, 3246, 0);
-					this.stop();
-					return;
-				    }
-				}
 				if (player.getNewComersSide().handleObjectClicking(id, new Position(x, y, z))) {
 					this.stop();
 					return;
@@ -287,9 +256,20 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (object.getName().toLowerCase().contains("altar") && id != 2640 && id != 6552) {
+				    if(id == 412 && x == 2571 && y == 9499) { //Yanille dungeon trap chaos altar
+					player.getActionSender().sendMessage("The altar moves and you fall into a pit below!");
+					player.fadeTeleport(new Position(2580, 9575, 0));
+					this.stop();
+					return;
+				    } else if(id == 3521) { //Altar to nature / nature altar
+					Prayer.rechargePrayerGuild(player);
+					this.stop();
+					return; 
+				    } else {
 					Prayer.rechargePrayer(player);
 					this.stop();
 					return;
+				    }
 				}
 				if (player.getAlchemistPlayground().handleObjectClicking(id, x, y)) {
 					this.stop();
@@ -320,7 +300,7 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				if (id == 2551 || id == 2550 || id == 2556 || id == 2558 || id == 2557 || id == 2554) {
+				if (id == 2551 || id == 2550 || id == 2556 || id == 2558 || id == 2557 || id == 2554 || id == 2559) {
 					player.getActionSender().sendMessage("This door is locked.");
 					this.stop();
 					return;
@@ -353,7 +333,7 @@ public class WalkToActionHandler {
 					this.stop();
 					return;
 				}
-				if(player.getCanoe().canoeStation(id) || player.getCanoe().useCanoe(id, x,y,z))
+				if(player.getCanoe().objectClick(id, x, y, z))
 				{
 					this.stop();
 					return;
@@ -387,6 +367,10 @@ public class WalkToActionHandler {
 						this.stop();
 						return;
 					}
+				}
+				if (ThieveOther.handleObjectClick(player, id, x, y)) {
+					this.stop();
+					return;
 				}
 				/*if (objectName.contains("gate") && id != 2882 && id != 2883 && id != 2623) {
 					// Gates.handleGate(id, x, y, z);
@@ -477,6 +461,25 @@ public class WalkToActionHandler {
 						player.getActionSender().sendMessage("The gate is locked.");
 					}
 					break;
+				case 10638: //Entrana altar
+				    Prayer.rechargePrayer(player);
+				    this.stop();
+				    return;
+				case 377:
+				    if(player.getInventory().playerHasItem(993) && Misc.goodDistance(player.getPosition(), new Position(2561, 9507, 0), 2)) {
+					 player.getUpdateFlags().sendAnimation(TheGrandTree.PLACE_ANIM);
+					 player.getActionSender().sendMessage("You open the sinister looking chest with your key.");
+					 player.getInventory().replaceItemWithItem(new Item(993), new Item(205));
+					 player.getInventory().addItem(new Item(205));
+					 player.getInventory().addItem(new Item(207, 3));
+					 player.getInventory().addItem(new Item(209));
+					 player.getInventory().addItem(new Item(211));
+					 player.getInventory().addItem(new Item(213));
+					 player.getInventory().addItem(new Item(219));
+				    } else {
+					player.getActionSender().sendMessage("The sinister looking chest is locked.");
+				    }
+				    break;
 				case 2994 :
 				case 2993 :
 				case 2992 :
@@ -526,8 +529,61 @@ public class WalkToActionHandler {
 					}
 					break;*/
 				case 6836 :
-						player.getPillory().openInterface();
+						player.getRandomHandler().getPillory().openInterface();
 					break;
+				case 7527:
+					if(x == 3063 && y == 3282) {
+						final Position toBe = new Position(3063, player.getPosition().getY() < 3283 ? 3284 : 3281, 0);
+						final int toWalk = player.getPosition().getY() < 3283 ? 1 : -1;
+						player.getUpdateFlags().sendFaceToDirection(toBe);
+						player.getUpdateFlags().setFaceToDirection(true);
+						player.getUpdateFlags().setUpdateRequired(true);
+						player.setStopPacket(true);
+						player.getActionSender().walkTo(player.getPosition().getX() == x ? 0 : player.getPosition().getX() < x ? 1 : -1, toWalk, true);
+						player.getUpdateFlags().sendAnimation(839);
+						CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
+							@Override
+							public void execute(CycleEventContainer b) {
+								b.stop();
+							}
+
+							@Override
+							public void stop() {
+								player.teleport(toBe);
+								player.setStopPacket(false);
+							}
+						}, 3);
+					}
+				break;
+				case 2303: //Yanille dungeon balancing ledge
+				    Agility.crossLedge(player, 2580, player.getPosition().getY() < 9520 ? 9520 : 9512, player.getPosition().getY() < 9520 ? 3 : 1, 10, 40, 25);
+				    break;
+				case 2316: //Yanille dungeon staircase from spiders
+				    player.fadeTeleport(new Position(2579, 9520, 0));
+				    break;
+				case 1728: //Yanille dungeon stairs to Salarin
+				    player.fadeTeleport(new Position(2620, 9565, 0));
+				    break;
+				case 1729: //Yanille dungeon stairs back from Salarin
+				    player.fadeTeleport(new Position(2620, 9496, 0));
+				    break;
+				case 2290:
+				    Agility.crawlPipe(player, player.getPosition().getX() > 2572 ? 2572 : 2578, y, 6, 49, 35);
+				    break;
+				case 2321: //Yanille dungeon monkey bars
+				    Agility.crossMonkeyBars(player, player.getPosition().getX(), player.getPosition().getY() < 9495 ? 9495 : 9488, 57, 30);
+				    break;
+				case 2317: //Yanille dungeon rubble level 67
+				    if(player.getSkill().getLevel()[Skill.AGILITY] < 67) {
+					player.getDialogue().sendStatement("You need an Agility level of 67 to climb this obstacle.");
+					break;
+				    } else {
+					Ladders.climbLadder(player, new Position(2614, 9504, 0));
+					break;
+				    }
+				case 2318: //Yanille dungeon pile of rubble
+				    player.fadeTeleport(new Position(2616, 9571, 0));
+				    break;
 				case 2114 : // coal truck
 					CoalTruck.withdrawCoal(player);
 					break;
@@ -587,23 +643,21 @@ public class WalkToActionHandler {
 					player.teleport(new Position(2636, 9517, 0));
 					break;
 				    }
+				case 3205: //ladder down
+					if(x == 2766 && y == 3121) {
+						Ladders.climbLadder(player, new Position(2767, 3121, 0)); //General store karamja
+						break;
+					}
 				case 8972: //freaky forester portal
-				    if(x == 2611 && y == 4776) {
-					FreakyForester forester = player.getFreakyForester();
-					if(forester.isActive()) {
-					    player.getDialogue().sendNpcChat("Hey! D-don't leave yet! I still need", "your help with this pheasant...", Dialogues.SAD);
-					    break;
-					}
-					else {
-					    for(Item item : player.getInventory().getItemContainer().getItems()) {
-						if(item == null) continue;
-						if(item.getId() == 6179) player.getInventory().removeItem(new Item(6179));
-						if(item.getId() == 6178) player.getInventory().removeItem(new Item(6178));
+					if(x == 2611 && y == 4776 && player.getRandomHandler().getCurrentEvent() != player.getRandomHandler().getFreakyForester()) {
+						for(Item item : player.getInventory().getItemContainer().getItems()) {
+							if(item == null) continue;
+							if(item.getId() == 6179) player.getInventory().removeItem(new Item(6179));
+							if(item.getId() == 6178) player.getInventory().removeItem(new Item(6178));
 					    }
-					    player.teleport(forester.getOldPos());
-					    break;
+						player.teleport(player.getLastPosition());
+						break;
 					}
-				    }
 				case 5097:
 				case 5094: //north brimhaven dungeon stairs
 					Dialogues.startDialogue(player, 2725);
@@ -667,28 +721,6 @@ public class WalkToActionHandler {
 					player.getActionSender().walkThroughDoubleDoor(2144, 2143, 2889, 9830, 2889, 9831, 0);
 				    }
 				break;
-				case 62: //merlin's crystal prison
-				    if(player.getQuestStage(11) == 11) {
-					if(player.getEquipment().getItemContainer().get(Constants.WEAPON).getId() == 35) {
-					    if(!MerlinsCrystal.merlinSpawned()) {
-						Npc npc = new Npc(249);
-						npc.setPosition(new Position(2763, 3512, 0));
-						npc.setSpawnPosition(new Position(2763, 3512, 0));
-						World.register(npc);
-					    }
-					    player.getUpdateFlags().sendAnimation(451);
-					    player.getActionSender().sendStillGraphic(new Graphic(287, 0), new Position(2767, 3494));
-					    player.getActionSender().sendStillGraphic(new Graphic(287, 0), new Position(2767, 3493));
-					    player.getActionSender().sendStillGraphic(new Graphic(287, 0), new Position(2768, 3494));
-					    player.getActionSender().sendStillGraphic(new Graphic(287, 0), new Position(2768, 3493));
-					    player.fadeTeleport(new Position(2764, 3512, 0));
-					    player.setQuestStage(11, 12);
-					}
-					else {
-					    player.getDialogue().sendStatement("You need to equip Excalibur first.");
-					}
-				    }
-				break;
 				case 3782: //death plateau doors west
 				case 3783:
 				    if(x == 2897) {
@@ -717,7 +749,34 @@ public class WalkToActionHandler {
 				    }
 				    break;
 				case 4624 : // burthorpe staircase
-					player.teleport(new Position(2208, 4938));
+					if(x == 2899 && y == 3566) {
+						player.teleport(new Position(2206, 4934, 1));
+					}
+					break;
+				case 4620: //burthorpe games staircase down
+					if(x == 2207 && y == 4935) {
+						player.teleport(new Position(2207, 4938, 0));
+					}
+					break;
+				case 4622 : // games room staircase
+					if(x == 2207 && y == 4935) {
+						player.teleport(new Position(2207, 4934, 1));
+					}
+					break;
+				case 4627: //games room stairs up to castle
+					if(x == 2205 && y == 4935) {
+						player.teleport(new Position(2899, 3565, 0));
+					}
+					break;
+				case 4626: //burthorpe castle stairs up
+					if(x == 2897 && y == 3566) {
+						player.teleport(new Position(2898, 3569, 1));
+					}
+					break;
+				case 4625: //burthorpe castle stairs down
+					if(x == 2897 && y == 3567) {
+						player.teleport(new Position(2897, 3565, 0));
+					}
 					break;
 				case 5959 : // magebank lever
 					if(!player.isTeleblocked()){
@@ -845,9 +904,6 @@ public class WalkToActionHandler {
                                 case 2797: //Watchtower second floor down
                                         Ladders.climbLadder(player, new Position(2549, 3112, 1));
                                         break;
-				case 4622 : // games room staircase
-					player.teleport(new Position(2899, 3565));
-					break;
 				case 2834 : // battlements
 					/*if(player.getPosition().getX() ==  2566) {
 					    //player.getUpdateFlags().sendAnimation(839);
@@ -876,8 +932,8 @@ public class WalkToActionHandler {
 					@Override
 					public void execute(CycleEventContainer b) {
 					    player.getActionSender().walkTo(0, player.getPosition().getY() < 3492 ? 2 : -2, true);
-					    GameObject o = new GameObject(1970, 2466, 3492, 0, 2, 10, 1968, 1);
-					    GameObject ob = new GameObject(1969, 2464, 3492, 0, 0, 10, 1967, 1);
+					    new GameObject(1970, 2466, 3492, 0, 2, 10, 1968, 1);
+					    new GameObject(1969, 2464, 3492, 0, 0, 10, 1967, 1);
 					    b.stop();
 					}
 
@@ -1062,7 +1118,7 @@ public class WalkToActionHandler {
 					Ladders.climbLadder(player, new Position(1912, 4367, 0));
 					break;
 				case 10230:
-					Ladders.climbLadder(player, new Position(2899, 4449, 0));
+					Ladders.climbLadder(player, new Position(2900, 4449, 0));
 					break;
 				case 9398: // deposit box
 					player.getBankManager().openDepositBox();
@@ -1163,6 +1219,18 @@ public class WalkToActionHandler {
 					if (x == 2444 && y == 3414) {
 						player.teleport(new Position(2445, 3416, 1));
 					}
+					if(x == 2475 && y == 3400) {
+					    Ladders.climbLadder(player, new Position(2475, 3399, 1));
+					}
+					if(x == 2488 && y == 3407) {
+					    Ladders.climbLadder(player, new Position(2489, 3409, 1));
+					}
+					if(x == 2485 && y == 3402) {
+					    Ladders.climbLadder(player, new Position(2485, 3401, 1));
+					}
+					if(x == 2479 && y == 3408) {
+					    Ladders.climbLadder(player, new Position(2479, 3407, 1));
+					}
 					break;
 				case 1744: // gnome tree stairs
 					if (x == 2445 && y == 3434) {
@@ -1170,6 +1238,18 @@ public class WalkToActionHandler {
 					}
 					if (x == 2445 && y == 3415) {
 						player.teleport(new Position(2445, 3413, 0));
+					}
+					if (x == 2475 && y == 3400) {
+						player.teleport(new Position(2474, 3400, 0));
+					}
+					if (x == 2489 && y == 3408) {
+						player.teleport(new Position(2490, 3408, 0));
+					}
+					if (x == 2485 && y == 3402) {
+						player.teleport(new Position(2484, 3402, 0));
+					}
+					if (x == 2479 && y == 3408) {
+						player.teleport(new Position(2478, 3408, 0));
 					}
 					break;
 				case 10640: //altar for skull
@@ -1228,6 +1308,9 @@ public class WalkToActionHandler {
 				case GhostsAhoy.TRAPDOOR:
 					TrapDoor.handleTrapdoor(player, id, 5268, def);
 					break;
+				case InSearchOfTheMyreque.TRAPDOOR:
+					TrapDoor.handleTrapdoor(player, id, 6435, def);
+					break;
 				case 1570: // climb down trapdoor
 				case 5947: // climb into lumby swamp
 				case 6435: // climb down trapdoor
@@ -1236,6 +1319,7 @@ public class WalkToActionHandler {
 				case 9472: // climb down port sarim dungeon
 				case 1759: // taverly dungeon entrance
 				case 11867: // dwarven mine entrance
+				case 14758: // wilderness agility spike room
 					Ladders.climbLadder(player, new Position(player.getPosition().getX(), player.getPosition().getY() + 6400));
 					break;
 				case 1755: // exit stairs
@@ -1390,11 +1474,17 @@ public class WalkToActionHandler {
 				case 2148:// wizard tower ladder to sedridor
 					Ladders.climbLadder(player, new Position(3105, 3162, 0));
 					break;
-				case 881: // open manhold
+				case 881: // open manhole
 					TrapDoor.handleTrapdoor(player, id, 882, def);
 					break;
-				case 883: // close manhold
+				case 883: // close manhole
 					TrapDoor.handleTrapdoor(player, id, 881, def);
+					break;
+				case 2545: // open manhole west ard
+					TrapDoor.handleTrapdoor(player, id, 2544, def);
+					break;
+				case 2543: // close manhole west ard
+					TrapDoor.handleTrapdoor(player, id, 2545, def);
 					break;
 				case 2112: // Mining guild door entrance
 					if (player.getPosition().getY() > 9756) {
@@ -1700,6 +1790,33 @@ public class WalkToActionHandler {
 						player.getActionSender().walkTo(0, player.getPosition().getY()+1 > y ? -1 : 1, true);
 					}
 					break;
+				case 245:
+					if (x == 3019 && y == 3959 || x == 3017 && y == 3959) {
+						Ladders.checkClimbStaircase(player, 0, 2, "up");
+					}
+					if (x == 3046 && y == 3227 || x == 3046 && y == 3231) {
+						Ladders.checkClimbStaircase(player, 2, 0, "up");
+					}
+					break;
+				case 246:
+					if (x == 3019 && y == 3959 || x == 3017 && y == 3959) {
+						Ladders.checkClimbStaircaseBackwards(player, 0, 2, "down");
+					}
+					if (x == 3046 && y == 3227 || x == 3046 && y == 3231) {
+						Ladders.checkClimbStaircaseBackwards(player, 2, 0, "down");
+					}
+					break;
+				case 272:
+					Ladders.checkClimbLadder(player, "up");
+					break;
+				case 273:
+					Ladders.checkClimbLadder(player, "down");
+					break;
+				case 10527:
+				case 10529:
+					player.getActionSender().walkThroughDoubleDoor(10527, 10529, 3426, 3555, 3427, 3555, 1);
+					player.getActionSender().walkTo(0, player.getPosition().getY() < 3556 ? 1 : -1, true);
+					break;
 				default:
 					player.getActionSender().sendMessage("Nothing interesting happens.");
 					break;
@@ -1718,7 +1835,7 @@ public class WalkToActionHandler {
 		final int id = player.getClickId();
 		final int x = player.getClickX();
 		final int y = player.getClickY();
-		final int z = player.getClickZ();
+		final int z = player.getClickZ()%4;
 		final int task = player.getTask();
 		World.submit(new Tick(1, true) {
 			@Override
@@ -1750,9 +1867,11 @@ public class WalkToActionHandler {
 				Position loc = new Position(player.getClickX(), player.getClickY(), z);
 				if (object != null)
 					player.getUpdateFlags().sendFaceToDirection(loc.getActualLocation(object.getBiggestSize()));
-				if (PriestInPeril.doObjectSecondClicking(player, id, x, y)) {
-				    this.stop();
-				    return;
+				for (Quest q : QuestHandler.getQuests()) {
+					if (q.doObjectSecondClick(player, id, x, y)) {
+						this.stop();
+						return;
+					}
 				}
 				if (ThieveOther.handleObjectClick2(player, id, x, y)) {
 					this.stop();
@@ -1772,18 +1891,6 @@ public class WalkToActionHandler {
 					return;
 				}
 				if (PickableObjects.pickObject(player, id, x, y)) {
-					this.stop();
-					return;
-				}
-				if(GhostsAhoy.doObjectSecondClick(player, id, x, y)) {
-					this.stop();
-					return;
-				}
-				if(HeroesQuest.doObjectSecondClick(player, id, x, y)) {
-					this.stop();
-					return;
-				}
-				if (TreeGnomeVillage.doObjectSecondClick(player, id, x, y)) {
 					this.stop();
 					return;
 				}
@@ -1849,6 +1956,9 @@ public class WalkToActionHandler {
 					Smelting.smeltInterface(player);
 					// player.getSmithing().setUpSmelting();or
 					break;
+				case 2559: //Yanille dungeon picklock door
+				    ThieveOther.pickLock(player, new Position(2601, 9482, 0), 2559, 82, 75, 0, player.getPosition().getY() < 9482 ? 1 : -1);
+				    break;
 				case 2644:
 					Menus.sendSkillMenu(player, "spinning");
 					break;
@@ -1872,28 +1982,6 @@ public class WalkToActionHandler {
 				case 12111: // milk cow zanaris
 					MilkCow.milkCow(player);
 					break;
-				case 61: //chaos altar
-				    if(player.getQuestStage(11) == 9) {
-					player.getDialogue().sendStatement("You find some words inscribed on the edge of the altar...", "They read: Snarthon Candtrick Termanto.");
-					player.setQuestStage(11, 10);
-					break;
-				    }
-				break;
-				case 63: //merlin's crystal crate
-				    if(player.getQuestStage(11) >= 4 && player.getPosition().clone() != new Position(2801, 3442)) {
-					player.teleport(new Position(2801, 3442));
-					player.getActionSender().sendMessage("You climb into the crate.");
-					if(!MerlinsCrystal.workerSpawned()) {
-					    Npc npc = new Npc(675);
-					    npc.setPosition(new Position(2805, 3431, 0));
-					    npc.setSpawnPosition(new Position(2803, 3442, 0));
-					    World.register(npc);      
-					    npc.walkTo(new Position(2803, 3442), true);
-					    npc.setPlayerOwner(player.getIndex());
-					}
-					Dialogues.startDialogue(player, 10505);
-				    }
-				break;
 				}
 				this.stop();
 			}
@@ -1904,7 +1992,7 @@ public class WalkToActionHandler {
 		final int id = player.getClickId();
 		final int x = player.getClickX();
 		final int y = player.getClickY();
-		final int z = player.getClickZ();
+		final int z = player.getClickZ()%4;
 		final int task = player.getTask();
 
 		World.submit(new Tick(1, true) {
@@ -1986,7 +2074,7 @@ public class WalkToActionHandler {
 		final int id = player.getClickId();
 		final int x = player.getClickX();
 		final int y = player.getClickY();
-		final int z = player.getClickZ();
+		final int z = player.getClickZ()%4;
 		final int task = player.getTask();
 		World.submit(new Tick(1, true) {
 			@Override
@@ -2058,12 +2146,10 @@ public class WalkToActionHandler {
 			player.getActionSender().sendMessage("This npc is not interested in talking with you right now.");
 			return;
 		}
-		int id = npc.getNpcId();
-		if(!npc.isBoothBanker() && id != HorrorFromTheDeep.SITTING_JOSSIK && id != 1423 && id != 1424) {
+		if(npc.canHaveInteractingEntity()) {
 		    npc.setInteractingEntity(player);
 		}
 		World.submit(new Tick(1, true) {
-			int count = 0;
 			@Override
 			public void execute() {
 				if (player == null || !player.checkTask(task) || npc.isDead()) {
@@ -2101,8 +2187,8 @@ public class WalkToActionHandler {
 				    }
 				}
 				Following.resetFollow(player);
-				int id = npc.getNpcId();
-				if(!npc.isBoothBanker() && id != HorrorFromTheDeep.SITTING_JOSSIK && id != 1423 && id != 1424) {
+				npc.getNpcId();
+				if(npc.canHaveInteractingEntity()) {
 				    npc.getUpdateFlags().faceEntity(player.getFaceIndex());
 				}
 				player.setInteractingEntity(npc);
@@ -2162,6 +2248,7 @@ public class WalkToActionHandler {
 					case 4446 : //fairy bankers
 					case 1702: //ghost banker
 					case 3046: //Nardah banker
+					case 2271: //Rogues den banker
 						npc.getUpdateFlags().faceEntity(player.getFaceIndex());
 						player.setInteractingEntity(npc);
 						player.getUpdateFlags().faceEntity(npc.getFaceIndex());
@@ -2251,6 +2338,7 @@ public class WalkToActionHandler {
 				case 2619:
 				case 1702: //ghost banker
 				case 3046: //Nardah banker
+				case 2271: //Rogues den banker
 					npc.getUpdateFlags().faceEntity(player.getFaceIndex());
 					player.setInteractingEntity(npc);
 					player.getUpdateFlags().faceEntity(npc.getFaceIndex());
@@ -2385,6 +2473,10 @@ public class WalkToActionHandler {
 				case 836: //SHANTAY Buy pass
 					Item SHANTAY_PASS = new Item(1854);
 					int SHANTAY_PASS_PRICE = SHANTAY_PASS.getDefinition().getPrice();
+					if(player.getInventory().getItemContainer().freeSlots() <= 0) {
+						player.getActionSender().sendMessage("Your inventory is full.");
+						break;
+					}
 					if(player.getInventory().playerHasItem(995, SHANTAY_PASS_PRICE))
 					{
 						player.getInventory().addItem(SHANTAY_PASS);
@@ -2612,6 +2704,11 @@ public class WalkToActionHandler {
 						CrystalChest.openCrystalChest(player);
 					}
 					break;
+				case 2644: //Spinning wheel
+				    if (item == 1737 || item == 1779 || item == 9436 || item == 6051) {
+					Menus.sendSkillMenu(player, "spinning");
+					break;
+				    }
 				case 733: // slash web
 					Webs.slashWeb(player, x, y, item);
 					break;
@@ -2760,6 +2857,7 @@ public class WalkToActionHandler {
 					break;
 				case 2645:// pile of sand
 				case 10814: //yanille sand
+				case 4373: //relleka sand
 					if (item == GlassMaking.BUCKET) {
 						GlassMaking.fillWithSand(player);
 					}
@@ -2930,12 +3028,27 @@ public class WalkToActionHandler {
 	return false;
     }
 	private static boolean canInteractWithObject(Player player, Position objectPos, GameObjectDef def) {
-		if(def.getId() == 2638 || def.getId() == 2142 || def.getId() == 4446 || def.getId() == 4447 || def.getId() == 5015 || def.getId() == 10782 || (def.getId() >= 7272 && def.getId() <= 7287) || def.getId() == 4765 || def.getId() == 4766)
+		if(def.getId() == 2638 || def.getId() == 2142 || def.getId() == 3340 || def.getId() == 4446 || def.getId() == 4447 || def.getId() == 5015 || def.getId() == 10782 || (def.getId() >= 7272 && def.getId() <= 7287) || def.getId() == 4765 || def.getId() == 4766)
 		{
 			return true;
 		}
+		if(def.getId() == 1729 || def.getId() == 3213 || def.getId() == 3214) {
+			return Misc.goodDistance(player.getPosition(), def.getPosition(), 4);
+		}
+		if(def.getId() == 2290) {
+			return Misc.goodDistance(player.getPosition(), def.getPosition(), 3);
+		}
+		if(def.getId() == 5061 || def.getId() == 5060) {
+			return Misc.goodDistance(player.getPosition(), objectPos, 2);
+		}
+		if(def.getId() == 5003 || (def.getId() >= 137 && def.getId() <= 145)) {
+			return Misc.goodDistance(player.getPosition(), new Position(objectPos.getX(), objectPos.getY(), player.getPosition().getZ()), 1);
+		}
+		if(def.getId() == 5002) {
+		    return Misc.goodDistance(player.getPosition().clone().modifyZ(player.getPosition().getZ()%4), def.getPosition(), 1);
+		}
 		Rangable.removeObjectAndClip(def.getId(), def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), def.getFace(), def.getType());
-		boolean canInteract = Misc.checkClip(player.getPosition(), objectPos, false);
+		boolean canInteract = Misc.checkClip(player.getPosition().clone().modifyZ(player.getPosition().getZ()%4), objectPos, false);
 		Rangable.addObject(def.getId(), def.getPosition().getX(), def.getPosition().getY(), def.getPosition().getZ(), def.getFace(), def.getType(), true);
 		return canInteract;
 	}

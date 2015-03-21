@@ -11,21 +11,24 @@ import com.rs2.model.content.minigames.warriorsguild.WarriorsGuild;
 import com.rs2.model.content.minigames.barrows.Barrows;
 import com.rs2.model.content.minigames.castlewars.CastlewarsExchange;
 import com.rs2.model.content.minigames.castlewars.impl.CastlewarsBarricades;
-import com.rs2.model.content.minigames.magetrainingarena.AlchemistPlayground;
 import com.rs2.model.content.minigames.magetrainingarena.MageRewardHandling;
 import com.rs2.model.content.minigames.magetrainingarena.TelekineticTheatre;
-import com.rs2.model.content.quests.DemonSlayer;
-import com.rs2.model.content.quests.DwarfCannon;
-import com.rs2.model.content.quests.GhostsAhoy;
-import com.rs2.model.content.quests.HeroesQuest;
-import com.rs2.model.content.quests.MerlinsCrystal;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
-import com.rs2.model.content.quests.MonkeyMadness.MonkeyMadness;
-import com.rs2.model.content.quests.PiratesTreasure;
-import com.rs2.model.content.quests.Quest;
+import com.rs2.model.content.quests.impl.DemonSlayer;
+import com.rs2.model.content.quests.impl.DwarfCannon;
+import com.rs2.model.content.quests.impl.GhostsAhoy.GhostsAhoy;
+import com.rs2.model.content.quests.impl.HeroesQuest;
+import com.rs2.model.content.quests.impl.MerlinsCrystal;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.MonkeyMadness.MonkeyMadness;
+import com.rs2.model.content.quests.impl.NatureSpirit;
+import com.rs2.model.content.quests.impl.PiratesTreasure;
+import com.rs2.model.content.quests.impl.PlagueCity;
+
 import com.rs2.model.content.quests.QuestHandler;
-import com.rs2.model.content.quests.RecruitmentDrive;
-import com.rs2.model.content.quests.TheGrandTree;
+import com.rs2.model.content.quests.impl.ClockTower;
+import com.rs2.model.content.quests.impl.Quest;
+import com.rs2.model.content.quests.impl.RecruitmentDrive;
+import com.rs2.model.content.quests.impl.TheGrandTree;
 import com.rs2.model.content.skills.Menus;
 import com.rs2.model.content.skills.Tools;
 import com.rs2.model.content.skills.Crafting.BasicCraft;
@@ -81,6 +84,7 @@ import com.rs2.model.players.item.ItemDefinition;
 import com.rs2.model.players.item.ItemManager;
 import com.rs2.model.players.item.functions.Casket;
 import com.rs2.model.players.item.functions.Nests;
+import com.rs2.model.players.item.functions.Toys;
 import com.rs2.model.tick.CycleEvent;
 import com.rs2.model.tick.CycleEventContainer;
 import com.rs2.model.tick.CycleEventHandler;
@@ -198,6 +202,9 @@ public class ItemPacketHandler implements PacketHandler {
 	if (player.getPuzzle().moveSlidingPiece(itemId, true)) {
 	    return;
 	}
+	if(player.getQuestStage(36) == 4 && player.getMMVars().getPuzzle().moveSlidingPiece(itemId, true)) {
+	    return;
+	}
 	if (item == null || item.getId() != itemId || !item.validItem()) {
 	    return;
 	}
@@ -277,21 +284,23 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	
 	if (item.getDefinition().isUntradable() || item.getId() == 763 || item.getId() == 765 || item.getId() == 769 || item.getId() == 288 || item.getId() == 10498 || item.getId() == 10499) {
-	    if (Degradeables.notDroppable(Degradeables.getDegradeableItem(item), item)) {
-		String[][] info = {{"Are you sure you want to drop this item?", "14174"}, {"Yes.", "14175"}, {"No.", "14176"}, {"", "14177"}, {"Dropping this item will make it break completely.", "14182"}, {"", "14183"}, {item.getDefinition().getName(), "14184"}};
-		for (String[] element : info) {
-		    player.getActionSender().sendString(element[0], Integer.parseInt(element[1]));
+		if (item.getId() != 415 && item.getId() != 416 && item.getId() != 417) {
+			if (Degradeables.notDroppable(Degradeables.getDegradeableItem(item), item)) {
+				String[][] info = {{"Are you sure you want to drop this item?", "14174"}, {"Yes.", "14175"}, {"No.", "14176"}, {"", "14177"}, {"Dropping this item will make it break completely.", "14182"}, {"", "14183"}, {item.getDefinition().getName(), "14184"}};
+				for (String[] element : info) {
+					player.getActionSender().sendString(element[0], Integer.parseInt(element[1]));
+				}
+			} else {
+				String[][] info = {{"Are you sure you want to drop this item?", "14174"}, {"Yes.", "14175"}, {"No.", "14176"}, {"", "14177"}, {"Dropping this item will make you lose it forever.", "14182"}, {"", "14183"}, {item.getDefinition().getName(), "14184"}};
+				for (String[] element : info) {
+					player.getActionSender().sendString(element[0], Integer.parseInt(element[1]));
+				}
+			}
+			player.getActionSender().sendUpdateItem(item, 0, 14171, 1);
+			player.setDestroyItem(item);
+			player.getActionSender().sendChatInterface(14170);
+			return;
 		}
-	    } else {
-		String[][] info = {{"Are you sure you want to drop this item?", "14174"}, {"Yes.", "14175"}, {"No.", "14176"}, {"", "14177"}, {"Dropping this item will make you lose it forever.", "14182"}, {"", "14183"}, {item.getDefinition().getName(), "14184"}};
-		for (String[] element : info) {
-		    player.getActionSender().sendString(element[0], Integer.parseInt(element[1]));
-		}
-	    }
-	    player.getActionSender().sendUpdateItem(item, 0, 14171, 1);
-	    player.setDestroyItem(item);
-	    player.getActionSender().sendChatInterface(14170);
-	    return;
 	}
 	if (player.getInventory().getItemContainer().contains(item.getId())) {
 	    player.getActionSender().sendSound(376, 1, 0);
@@ -371,6 +380,12 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	if (BasicCraft.handleItemOnItem(player, firstItem, secondItem)) {
 	    return;
+	}
+	if (GodBook.blessSymbol(player, firstItem, secondItem)) {
+	    return;
+	}
+	if (player.getGnomeCooking().itemOnItemHandling(firstItem, secondItem, itemFirstClickSlot, itemSecondClickSlot)) {
+		return;
 	}
 	if ((firstItem == GlassMaking.GLASSBLOWING_PIPE && secondItem == GlassMaking.MOLTEN_GLASS) || (secondItem == GlassMaking.GLASSBLOWING_PIPE && firstItem == GlassMaking.MOLTEN_GLASS)) {
 	    Menus.sendSkillMenu(player, "glassMaking");
@@ -482,28 +497,35 @@ public class ItemPacketHandler implements PacketHandler {
 	player.setClickZ(player.getPosition().getZ());
 	packet.getIn().readShort();
 	player.setClickX(packet.getIn().readShort());
-	if (itemInInven != 590) {
-	    return;
-	}
-	final int task = player.getTask();
-	player.setSkilling(new CycleEvent() {
-	    @Override
-	    public void execute(CycleEventContainer container) {
-		if (!player.checkTask(task)) {
-		    container.stop();
+	switch(itemInInven) {
+	    default:
 		    return;
-		}
-		if (player.getPosition().getX() == player.getClickX() && player.getPosition().getY() == player.getClickY()) {
-		    player.getFiremaking().attemptFire(player.getClickId(), 0, true, player.getClickX(), player.getClickY(), player.getPosition().getZ());
-		    container.stop();
-		}
-	    }
+	    case 590: //Tinderbox
+		    final int task = player.getTask();
+		    player.setSkilling(new CycleEvent() {
+			    @Override
+			    public void execute(CycleEventContainer container) {
+				    if (!player.checkTask(task)) {
+					    container.stop();
+					    return;
+				    }
+				    if (player.getPosition().getX() == player.getClickX() && player.getPosition().getY() == player.getClickY()) {
+					    player.getFiremaking().attemptFire(player.getClickId(), 0, true, player.getClickX(), player.getClickY(), player.getPosition().getZ());
+					    container.stop();
+				    }
+			    }
 
-	    @Override
-	    public void stop() {
-	    }
-	});
-	CycleEventHandler.getInstance().addEvent(player, player.getSkilling(), 1);
+			    @Override
+			    public void stop() {
+			    }
+		    });
+		    CycleEventHandler.getInstance().addEvent(player, player.getSkilling(), 1);
+		    break;
+		
+	    case 1929: //ClockTower
+		ClockTower.itemOnGroundItemHandling(player, player.getClickId());
+	}
+	
     }
 
     private void handlePickupItem(Player player, Packet packet) {
@@ -532,6 +554,9 @@ public class ItemPacketHandler implements PacketHandler {
 	    return;
 	}
 	if (DwarfCannon.itemPickupHandling(player, player.getClickId())) {
+	    return;
+	}
+	if (ClockTower.itemPickupHandling(player, player.getClickId())) {
 	    return;
 	}
 	if ((Boolean) player.getAttributes().get("canPickup")) {
@@ -668,6 +693,7 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	if (interfaceID == 1688) {
 	    player.getEquipment().unequip(player.getSlot());
+	    player.setEquipmentOperate(false);
 	} else if (interfaceID == 5064 || interfaceID == 7423) {
 		player.getBankManager().bankItem(player.getSlot(), itemId, 1);
 	} else if (interfaceID == 5382) {
@@ -877,6 +903,9 @@ public class ItemPacketHandler implements PacketHandler {
 	if (QuestHandler.getQuests()[26].itemHandling(player, itemId)) { //Horror from the deep
 	    return;
 	}
+	if (player.getGnomeCooking().itemHandling(itemId)) {
+		return;
+	}
 	if (itemId == 6885) { //Mage Training hat
 	    Dialogues.startDialogue(player, 3096);
 	    return;
@@ -951,6 +980,9 @@ public class ItemPacketHandler implements PacketHandler {
 	    return;
 	}
 	if (player.getMultiCannon().itemFirstClick(itemId, player.getSlot())) {
+	    return;
+	}
+	if (Toys.itemFirstClick(player, itemId, player.getSlot())) {
 	    return;
 	}
 	for (Quest q : QuestHandler.getQuests()) {
@@ -1044,6 +1076,19 @@ public class ItemPacketHandler implements PacketHandler {
 	    case 10592:
 		player.getPets().registerPet(10592, 5428);
 		return;
+	    case 2005: //Burnt Stew
+		 if (player.getInventory().removeItemSlot(item, player.getSlot()))  {
+			player.getActionSender().sendMessage("You empty the burnt stew");
+			player.getInventory().addItemToSlot(new Item(1923), player.getSlot());
+		}
+		return;
+	    case 2013: //Burnt Curry
+		if (player.getInventory().removeItemSlot(item, player.getSlot()))  {
+                        player.getActionSender().sendMessage("You empty the burnt curry");
+                        player.getInventory().addItemToSlot(new Item(1923), player.getSlot());
+                }
+                return;
+
 	    case 952: //spade
 		player.getUpdateFlags().sendAnimation(830);
 		player.getActionSender().sendMessage("You dig into the ground...");
@@ -1057,12 +1102,12 @@ public class ItemPacketHandler implements PacketHandler {
 			    container.stop();
 			    return;
 			}
-			if (player.getPosition().getX() == 2566 && (player.getPosition().getY() == 3331 || player.getPosition().getY() == 3333)) {
+			/*if (player.getPosition().getX() == 2566 && (player.getPosition().getY() == 3331 || player.getPosition().getY() == 3333)) {
 			    player.fadeTeleport(new Position(2530, 3303));
 			    player.getActionSender().sendMessage("and find yourself in plague city.");
 			    container.stop();
 			    return;
-			}
+			}*/
 			if (player.getPosition().getX() == 2999 && player.getPosition().getY() == 3383 && (player.getQuestStage(20) == 6 || player.getQuestStage(20) == 7)) {
 			    player.setQuestStage(20, 8);
 			    QuestHandler.completeQuest(player, 20);
@@ -1075,6 +1120,12 @@ public class ItemPacketHandler implements PacketHandler {
 			    player.getInventory().addItem(new Item(GhostsAhoy.BOOK_OF_HARICANTO));
 			    container.stop();
 			    return;
+			}
+			if (player.getPosition().getX() == 2566 && player.getPosition().getY() <= 3333 && player.getPosition().getY() >= 3331 && (player.getQuestStage(39) == 4 || player.getQuestStage(39) == 5)) {
+				player.getActionSender().sendMessage("Suddenly it crumbles away!");
+				PlagueCity.handleGardenDig(player);
+				container.stop();
+				return;
 			}
 			if (!MapScrolls.digClue(player) && !DiggingScrolls.digClue(player) && !CoordinateScrolls.digClue(player) && !Barrows.digCrypt(player)) {
 			    player.getActionSender().sendMessage("but do not find anything.");
@@ -1099,6 +1150,9 @@ public class ItemPacketHandler implements PacketHandler {
 	    case 6722:
 	    	player.getUpdateFlags().sendAnimation(2840);
 			player.getUpdateFlags().setForceChatMessage("Alas!");
+		return;
+	    case 6040:// ammy of nature
+		Dialogues.startDialogue(player, 10016);
 		return;
 	}
 
@@ -1129,6 +1183,9 @@ public class ItemPacketHandler implements PacketHandler {
 	}
 	Pouches.checkEssencePouch(player, item.getId());
 	switch (itemId) {
+	    case NatureSpirit.SILVER_SICKLE_B:
+		NatureSpirit.handleDruidicSpell(player, true);
+		return;
 	    case 4566: // rubber chicken
 	    	player.getUpdateFlags().sendAnimation(1835);
 		return;
@@ -1179,13 +1236,13 @@ public class ItemPacketHandler implements PacketHandler {
 	    player.setDfsCharges(0);
 	    return;
 	}
-	for (int[] element : Pouches.POUCHES) {
-	    if (item.getId() == element[0]) {
-		Pouches.emptyEssencePouch(player, item.getId());
-		return;
-	    }
-	}
 	switch (item.getId()) {
+	    case 4006: //monkey dentures
+		player.getActionSender().sendMessage("You hear a quiet chattering coming from the dentures.");
+		return;
+	    case 4007: //enchanted bar
+		player.getActionSender().sendMessage("You hear a very faint chattering coming from the metal.");
+		return;
 	    case 2552: // ring of duelling
 	    case 2554:
 	    case 2556:
@@ -1278,6 +1335,12 @@ public class ItemPacketHandler implements PacketHandler {
 	if (ApeAtoll.handleGreeGreeEquip(player, itemId)) {
 	    return;
 	}
+	for (int[] element : Pouches.POUCHES) {
+	    if (itemId== element[0]) {
+	    	Pouches.emptyEssencePouch(player, itemId);
+	    	return;
+	    }
+	}
 	if (itemId == 11664) {
 	    if (player.hasFullVoidRange() && player.getSkill().getLevel()[4] <= player.getSkill().getPlayerLevel(4)) {
 		player.getSkill().getLevel()[4] = (int) (player.getSkill().getPlayerLevel(4) * 1.1);
@@ -1297,6 +1360,7 @@ public class ItemPacketHandler implements PacketHandler {
 	    return;
 	}
 	player.getEquipment().equip(player.getSlot());
+	player.setEquipmentOperate(false);
     }
 
     private void handleCastedSpellOnItem(Player player, Packet packet) {
@@ -1354,6 +1418,26 @@ public class ItemPacketHandler implements PacketHandler {
 		return;
 	    }
 	}
+	if(Constants.DEGRADING_ENABLED) {
+		    Item item = new Item(itemId);
+		    Degradeables d = Degradeables.getDegradeableItem(item);
+		    if (d != null) {
+			if (d.getOriginalId() == itemId) {
+			    if (player.getDegradeableHits()[d.getPlayerArraySlot()] <= 0) {
+				player.setDegradeableHits(d.getPlayerArraySlot(), 0);
+				player.getActionSender().sendMessage("Your " + item.getDefinition().getName().toLowerCase() + " will degrade and become untradeable upon combat.", true);
+			    }
+			}
+			int count = 1;
+			for (int i : d.getIterableDegradedIds(!item.getDefinition().getName().toLowerCase().contains("crystal"))) {
+			    if (item.getId() == i) {
+				int hitCount = player.getDegradeableHits()[Degradeables.getDegradeableItem(item).getPlayerArraySlot()];
+				player.getActionSender().sendMessage("You have " + ((Degradeables.DEGRADE_HITS * count) - hitCount) + " hits on your " + item.getDefinition().getName().toLowerCase() + " until the next degrade.", true);
+			    }
+			    count++;
+			}
+		}
+	}
 	switch (itemId) {
 	    case 11283:
 		if(player.dfsTimer) {
@@ -1383,17 +1467,20 @@ public class ItemPacketHandler implements PacketHandler {
 	    case 4566: // rubber chicken
 		player.getUpdateFlags().sendAnimation(1835);
 		return;
+	    case NatureSpirit.SILVER_SICKLE_B:
+	    	NatureSpirit.handleDruidicSpell(player, true);
+		return;
 	    case 3840:
 	    case 3842:
 	    case 3844: //god books
-		GodBook.preachGodBook(player, itemId);
+	    	GodBook.preachGodBook(player, itemId);
 		return;
 	    case 2568: // RING OF FORGING CHARGE CHECK
-		player.getActionSender().sendMessage("You have " + player.getRingOfForgingLife() + " Ring of Forging charge(s) remaining.");
-		return;
+	    	player.getActionSender().sendMessage("You have " + player.getRingOfForgingLife() + " Ring of Forging charge(s) remaining.");
+    	return;
 	    case 11074: // BRACELET OF CLAY CHARGE CHECK
-		player.getActionSender().sendMessage("You have " + player.getClayBraceletLife() + " Bracelet of Clay charge(s) remaining.");
-		return;
+	    	player.getActionSender().sendMessage("You have " + player.getClayBraceletLife() + " Bracelet of Clay charge(s) remaining.");
+    	return;
 	    case 2552: // ring of duelling
 	    case 2554:
 	    case 2556:
@@ -1402,19 +1489,22 @@ public class ItemPacketHandler implements PacketHandler {
 	    case 2562:
 	    case 2564:
 	    case 2566:
-		Dialogues.startDialogue(player, 10004);
+	    	player.setEquipmentOperate(true);
+	    	Dialogues.startDialogue(player, 10004);
 		break;
 	    case 1712: // glory
 	    case 1710:
 	    case 1708:
 	    case 1706:
-		Dialogues.startDialogue(player, 10003);
+	    	player.setEquipmentOperate(true);
+	    	Dialogues.startDialogue(player, 10003);
 		break;
 	    case 11105: // glory
 	    case 11107:
 	    case 11109:
 	    case 11111:
-		Dialogues.startDialogue(player, 10015);
+	    	player.setEquipmentOperate(true);
+	    	Dialogues.startDialogue(player, 10015);
 		break;
 	    case 3853:
 	    case 3855:
@@ -1424,13 +1514,15 @@ public class ItemPacketHandler implements PacketHandler {
 	    case 3863:
 	    case 3865:
 	    case 3867:
-		Dialogues.startDialogue(player, 10002);
+	    	player.setEquipmentOperate(true);
+	    	Dialogues.startDialogue(player, 10002);
 		break;
 	    case 11118: // glory
 	    case 11120:
 	    case 11122:
 	    case 11124:
-		Dialogues.startDialogue(player, 10014);
+	    	player.setEquipmentOperate(true);
+	    	Dialogues.startDialogue(player, 10014);
 		break;
 	}
     }

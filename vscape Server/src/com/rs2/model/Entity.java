@@ -26,7 +26,7 @@ import com.rs2.model.content.combat.hit.HitType;
 import com.rs2.model.content.minigames.MinigameAreas;
 import com.rs2.model.content.minigames.barrows.Barrows;
 import com.rs2.model.content.minigames.fightcaves.FightCaves;
-import com.rs2.model.content.quests.MonkeyMadness.ApeAtoll;
+import com.rs2.model.content.quests.impl.MonkeyMadness.ApeAtoll;
 import com.rs2.model.content.skills.prayer.Prayer;
 import com.rs2.model.npcs.Npc;
 import com.rs2.model.players.Player;
@@ -56,6 +56,7 @@ public abstract class Entity {
 	private boolean dontWalk = false;
 	private boolean dontFollow = false;
 	private boolean dontAttack = false;
+	private boolean failedCriticalRequirement = false;
 
 	private int transformOnAggression;
 	private int hitType;
@@ -106,6 +107,7 @@ public abstract class Entity {
 	private Map<String, Object> attributes = new HashMap<String, Object>();
 
 	private Position position;
+	private Position lastPosition;
 	private UpdateFlags updateFlags = new UpdateFlags(this);
 
 	public abstract void reset();
@@ -128,9 +130,11 @@ public abstract class Entity {
 	}
 
 	public void expireHitRecords() {
-		for (Iterator<HitRecord> hitRecordIterator = hitRecordQueue.iterator(); hitRecordIterator.hasNext();) {
-			if (hitRecordIterator.next().expired())
-				hitRecordIterator.remove();
+		if(hitRecordQueue.size() > 0){
+			for (Iterator<HitRecord> hitRecordIterator = hitRecordQueue.iterator(); hitRecordIterator.hasNext();) {
+				if (hitRecordIterator.next().expired())
+					hitRecordIterator.remove();
+			}
 		}
 	}
 
@@ -258,7 +262,11 @@ public abstract class Entity {
 	public boolean inGoblinVillage() {
 		return Area(2949, 2964, 3478, 3514);
 	}
-
+	
+	public boolean inMortMyreSwamp() {
+		return Area(3400, 3520, 3326, 3459);
+	}
+	
 	public boolean inWild() {
 		return Area(2942, 3391, 3520, 4000) || Area(2942, 3391, 9919, 10365);
 	}
@@ -304,7 +312,11 @@ public abstract class Entity {
 	}
 
 	public boolean inRandomEvent() {
-		return Area(2587, 2619, 4760, 4785);
+		return Area(2587, 2619, 4760, 4785) || inMimeEvent();
+	}
+	
+	public boolean inMimeEvent() {
+		return Area(2005, 2013, 4761, 4764);
 	}
 
 	public boolean inBank() {
@@ -368,6 +380,10 @@ public abstract class Entity {
 	
 	public boolean inDarkWizardCircle() {
 		return Area(3224, 3231, 3367, 3372);
+	}
+	
+	public boolean inWestArdougne() {
+		return Area(2459, 2557, 3279, 3335) || Area(2509, 2557, 3264, 3335);
 	}
 	
 	public boolean inFightCaves() {
@@ -490,8 +506,12 @@ public abstract class Entity {
 		return position;
 	}
 	
+	public void setLastPosition(Position lastPosition) {
+		this.lastPosition = lastPosition;
+	}
+	
 	public Position getLastPosition() {
-		return new Position(getPosition().getLastX(), getPosition().getLastY(), getPosition().getLastZ());
+		return lastPosition;
 	}
 
 	public void setUpdateFlags(UpdateFlags updateFlags) {
@@ -950,25 +970,36 @@ public abstract class Entity {
 	public Entity getTradingEntity() {
 		return tradingEntity;
 	}
+	
+	public static boolean antiStackExceptions(Npc npcLead) {
+		int id = npcLead.getNpcId();
+		return npcLead.isPet() || Barrows.inBarrowsCrypts(npcLead) || id == 1472 || (id >= 2881 && id <= 2883 || id == 1578 || id == 224);
+	}
+	
 	public boolean canMove(Entity leader, int startX, int startY, int endX, int endY, int height, int xLength, int yLength) {
-	    if (leader != null && leader.isNpc() && !((Npc)leader).isPet() && !Barrows.inBarrowsCrypts(leader) && ((Npc) leader).getNpcId() != 1472) {
-		for (Npc npc : World.getNpcs()) {
-		    if (npc == null || npc.isPet()) {
-			continue;
-		    }
-		    if ((npc.getPosition().getX() == endX && npc.getPosition().getY() == endY)) {
-			return false;
+	    if (leader != null && leader.isNpc()) {
+		Npc npcLead = (Npc)leader;
+		if (antiStackExceptions(npcLead)) {
+		    
+		} else {
+		    for (Npc npc : World.getNpcs()) {
+			if (npc == null || npc.isPet()) {
+			    continue;
+			}
+			if ((npc.getPosition().getX() == endX && npc.getPosition().getY() == endY)) {
+			    return false;
+			}
 		    }
 		}
 	    }
-		return Region.canMove(startX, startY, endX, endY, height, xLength, yLength);
+		return this.isNpc() ? Region.canMoveNpc(startX, startY, endX, endY, height, xLength, yLength) : Region.canMove(startX, startY, endX, endY, height, xLength, yLength);
 	}
 	public boolean canMove(int startX, int startY, int endX, int endY, int height, int xLength, int yLength) {
-		return Region.canMove(startX, startY, endX, endY, height, xLength, yLength);
+		return this.isNpc() ? Region.canMoveNpc(startX, startY, endX, endY, height, xLength, yLength) : Region.canMove(startX, startY, endX, endY, height, xLength, yLength);
 	}
 
 	public boolean canMove(int x, int y) {
-		return Region.canMove(getPosition().getX(), getPosition().getY(), getPosition().getX() + x, getPosition().getY() + y, getPosition().getZ(), getSize(), getSize());
+		return this.isNpc() ? Region.canMoveNpc(getPosition().getX(), getPosition().getY(), getPosition().getX() + x, getPosition().getY() + y, getPosition().getZ(), getSize(), getSize()) : Region.canMove(getPosition().getX(), getPosition().getY(), getPosition().getX() + x, getPosition().getY() + y, getPosition().getZ(), getSize(), getSize());
 	}
 
     public TickTimer getFrozenImmunity() {
@@ -1108,5 +1139,13 @@ public abstract class Entity {
 	 */
 	public boolean isDontAttack() {
 		return dontAttack;
+	}
+	
+	public void setFailedCriticalRequirement(boolean set) {
+	    this.failedCriticalRequirement = set;
+	}
+	
+	public boolean failedCriticalRequirement() {
+	    return this.failedCriticalRequirement;
 	}
 }

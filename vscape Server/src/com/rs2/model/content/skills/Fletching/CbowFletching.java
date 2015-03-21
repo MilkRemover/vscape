@@ -66,13 +66,13 @@ public class CbowFletching {
 	}
 	
 	public enum UnstrungData {// you attach item 1 with item2
-		BRONZE(9454, 1777, 9174, 9, 6), 
-		BLURITE(9456, 1777, 9176, 24, 15),
-		IRON(9457, 1777, 9177, 39, 22), 
-		STEEL(9459, 1777, 9179, 46, 27), 
-		MITHRIL(9461, 1777, 9181, 54, 32), 
-		ADAMANT(9463, 1777, 9183, 61, 41), 
-		RUNITE(9465, 1777, 9185, 69, 50);
+		BRONZE(9454, 9438, 9174, 9, 6), 
+		BLURITE(9456, 9438, 9176, 24, 15),
+		IRON(9457, 9438, 9177, 39, 22), 
+		STEEL(9459, 9438, 9179, 46, 27), 
+		MITHRIL(9461, 9438, 9181, 54, 32), 
+		ADAMANT(9463, 9438, 9183, 61, 41), 
+		RUNITE(9465, 9438, 9185, 69, 50);
 
 		private int item1;
 		private int item2;
@@ -194,7 +194,6 @@ public class CbowFletching {
 				player.getUpdateFlags().sendAnimation(STRING_BOW);
 				player.getActionSender().sendSound(2606, 0, 0);
 				String item1Name = new Item(unstrungData.getItem1()).getDefinition().getName();
-				String item2Name = new Item(unstrungData.getItem2()).getDefinition().getName();
 				String finalName = new Item(unstrungData.getFinalItem()).getDefinition().getName();
 				player.getActionSender().sendMessage("You add a string to the "+item1Name+".");
 				player.getInventory().removeItem(new Item(unstrungData.getItem1()));

@@ -14,7 +14,7 @@ import com.rs2.model.content.minigames.magetrainingarena.AlchemistPlayground;
 import com.rs2.model.content.minigames.magetrainingarena.EnchantingChamber;
 import com.rs2.model.content.minigames.magetrainingarena.MageGameConstants;
 import com.rs2.model.content.minigames.magetrainingarena.TelekineticTheatre;
-import com.rs2.model.content.quests.FamilyCrest;
+import com.rs2.model.content.quests.impl.FamilyCrest;
 import com.rs2.model.content.quests.QuestHandler;
 import com.rs2.model.content.skills.Skill;
 import com.rs2.model.content.skills.runecrafting.TabHandler;
@@ -32,6 +32,7 @@ import com.rs2.util.requirement.ExecutableRequirement;
 import com.rs2.util.requirement.Requirement;
 import com.rs2.util.requirement.RuneRequirement;
 import com.rs2.util.requirement.SkillLevelRequirement;
+import java.util.ArrayList;
 
 /**
  *
@@ -71,28 +72,210 @@ public abstract class MagicSkill extends CycleEvent {
 			{6575, 6581, 6577, 11130, 6583, 6585, 11128, 11133, 557, 20, 554, 20, 87} // onyx
 	};
 	
+	public static boolean isElementalRune(int itemId) {
+	    return itemId >= 554 && itemId <= 557;
+	}
+	
+	public static boolean isCombinationRune(int itemId) {
+	    return itemId >= 4694 && itemId <= 4699;
+	}
+	
+	public static boolean failRequirement(Player player, Spell spell) {
+	    for(Item rune : spell.getRunesRequired()) {
+		if(isElementalRune(rune.getId()) && !player.getInventory().playerHasItem(new Item(rune.getId(), rune.getCount()))) {
+		    return true;
+		}
+	    }
+	    return false;
+	}
+	
+	public static Item[] changeToComboRuneRequirement(Player player, Spell spell) {
+	    Item[] runes = spell.getRunesRequired();
+	    ArrayList<Integer> noCount = new ArrayList<>();
+	    ArrayList<Item> count = new ArrayList<>();
+	    ArrayList<Item> newRunes = new ArrayList<>();
+	    for(Item rune : runes) {
+		noCount.add(rune.getId());
+		count.add(rune);
+		if(!isElementalRune(rune.getId())) {
+		    newRunes.add(rune);
+		}
+	    }
+	    if(noCount.contains(556) && noCount.contains(555)) { //Mist
+		int airAmount = count.get(noCount.indexOf((556))).getCount();
+		int waterAmount = count.get(noCount.indexOf((555))).getCount();
+		int mixAmount = airAmount < waterAmount ? airAmount : waterAmount;
+		int difference = airAmount - waterAmount;
+		if(player.getInventory().playerHasItem(new Item(4695, mixAmount))) {
+		    newRunes.add(new Item(4695, mixAmount));
+		    if(difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 556 : 555, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((556)));
+		    noCount.remove(noCount.indexOf((556)));
+		    count.remove(noCount.indexOf((555)));
+		    noCount.remove(noCount.indexOf((555)));
+		}
+	    }
+	    if(noCount.contains(556) && noCount.contains(554)) { //Smoke
+		int airAmount = count.get(noCount.indexOf((556))).getCount();
+		int fireAmount = count.get(noCount.indexOf((554))).getCount();
+		int mixAmount = airAmount < fireAmount ? airAmount : fireAmount;
+		int difference = airAmount - fireAmount;
+		if (player.getInventory().playerHasItem(new Item(4697, mixAmount))) {
+		    newRunes.add(new Item(4697, mixAmount));
+		    if (difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 556 : 554, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((556)));
+		    noCount.remove(noCount.indexOf((556)));
+		    count.remove(noCount.indexOf((554)));
+		    noCount.remove(noCount.indexOf((554)));
+		}
+	    }
+	    if(noCount.contains(556) && noCount.contains(557)) { //Dust
+		int airAmount = count.get(noCount.indexOf((556))).getCount();
+		int earthAmount = count.get(noCount.indexOf((557))).getCount();
+		int mixAmount = airAmount < earthAmount ? airAmount : earthAmount;
+		int difference = airAmount - earthAmount;
+		if (player.getInventory().playerHasItem(new Item(4696, mixAmount))) {
+		    newRunes.add(new Item(4696, mixAmount));
+		    if (difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 556 : 557, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((556)));
+		    noCount.remove(noCount.indexOf((556)));
+		    count.remove(noCount.indexOf((557)));
+		    noCount.remove(noCount.indexOf((557)));
+		}
+	    }
+	    if(noCount.contains(555) && noCount.contains(557)) { //Mud
+		int waterAmount = count.get(noCount.indexOf((555))).getCount();
+		int earthAmount = count.get(noCount.indexOf((557))).getCount();
+		int mixAmount = waterAmount < earthAmount ? waterAmount : earthAmount;
+		int difference = waterAmount - earthAmount;
+		if (player.getInventory().playerHasItem(new Item(4698, mixAmount))) {
+		    newRunes.add(new Item(4698, mixAmount));
+		    if (difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 555 : 557, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((555)));
+		    noCount.remove(noCount.indexOf((555)));
+		    count.remove(noCount.indexOf((557)));
+		    noCount.remove(noCount.indexOf((557)));
+		}
+	    }
+	    if(noCount.contains(555) && noCount.contains(554)) { //Steam
+		int waterAmount = count.get(noCount.indexOf((555))).getCount();
+		int fireAmount = count.get(noCount.indexOf((554))).getCount();
+		int mixAmount = waterAmount < fireAmount ? waterAmount : fireAmount;
+		int difference = waterAmount - fireAmount;
+		if (player.getInventory().playerHasItem(new Item(4694, mixAmount))) {
+		    newRunes.add(new Item(4694, mixAmount));
+		    if (difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 555 : 554, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((555)));
+		    noCount.remove(noCount.indexOf((555)));
+		    count.remove(noCount.indexOf((554)));
+		    noCount.remove(noCount.indexOf((554)));
+		}
+	    }
+	    if(noCount.contains(557) && noCount.contains(554)) { //Lava
+		int earthAmount = count.get(noCount.indexOf((557))).getCount();
+		int fireAmount = count.get(noCount.indexOf((554))).getCount();
+		int mixAmount = earthAmount < fireAmount ? earthAmount : fireAmount;
+		int difference = earthAmount - fireAmount;
+		if (player.getInventory().playerHasItem(new Item(4699, mixAmount))) {
+		    newRunes.add(new Item(4699, mixAmount));
+		    if (difference != 0) {
+			newRunes.add(new Item(difference > 0 ? 557 : 554, Math.abs(difference)));
+		    }
+		    count.remove(noCount.indexOf((557)));
+		    noCount.remove(noCount.indexOf((557)));
+		    count.remove(noCount.indexOf((554)));
+		    noCount.remove(noCount.indexOf((554)));
+		}
+	    }
+	    boolean containsCombination = false;
+	    for(Item i : newRunes) {
+		if(isCombinationRune(i.getId())) {
+		    containsCombination = true;
+		}
+	    }
+	    if(containsCombination) {
+		Item[] toReturn = new Item[newRunes.size()];
+		for(int i = 0; i < newRunes.size(); i++) {
+		    toReturn[i] = newRunes.get(i);
+		}
+		return toReturn;
+	    } else {
+		return spell.getRunesRequired();
+	    }
+	}
+	
+	public static int swapForComboRunes(Player player, int runeId) {
+	    switch(runeId) {
+		default:
+		    return 0;
+		case 556: //Air rune
+		    if(player.getInventory().playerHasItem(4696)) {
+			return 4696; //Dust
+		    } else if(player.getInventory().playerHasItem(4695)) {
+			return 4695; //Mist
+		    } else if(player.getInventory().playerHasItem(4697)) {
+			return 4697; //Smoke
+		    }
+		return 556;
+		case 555: //Water rune
+		    if(player.getInventory().playerHasItem(4695)) {
+			return 4695; //Mist
+		    } else if(player.getInventory().playerHasItem(4698)) {
+			return 4698; //Mud
+		    } else if (player.getInventory().playerHasItem(4694)) {
+			return 4694; //Steam
+		    }
+		return 555;
+		case 557: //Earth rune
+		    if(player.getInventory().playerHasItem(4696)) {
+			return 4696; //Dust
+		    } else if(player.getInventory().playerHasItem(4698)) {
+			return 4698; //Mud
+		    } else if(player.getInventory().playerHasItem(4699)) {
+			return 4699; //Lava
+		    }
+		return 557;
+		case 554: //Fire rune
+		    if(player.getInventory().playerHasItem(4697)) {
+			return 4697; //Smoke
+		    } else if (player.getInventory().playerHasItem(4694)) {
+			return 4694; //Steam
+		    } else if(player.getInventory().playerHasItem(4699)) {
+			return 4699; //Lava
+		    }
+		return 554;
+	    }
+	}
+	
 	private MagicSkill(Player player, Spell spell) {
 		this.player = player;
 		this.spell = spell;
-		this.requirements = new Requirement[spell.getRunesRequired().length + 1];
+		Item[] runesRequired;
+		if (failRequirement(player, spell)) {
+		    runesRequired = changeToComboRuneRequirement(player, spell);
+		} else {
+		    runesRequired = spell.getRunesRequired();
+		}
+		this.requirements = new Requirement[runesRequired.length + 1];
 		this.taskId = player.getTask();
 		int i = 0;
-		for (Item rune : spell.getRunesRequired()) {
-		    if(!player.getInventory().playerHasItem(new Item(rune.getId(), rune.getCount())) && swapForComboRunes(player, rune.getId()) != 0) {
-			requirements[i++] = new RuneRequirement(swapForComboRunes(player, rune.getId()) , rune.getCount()) {
-				@Override
-				public String getFailMessage() {
-					return SpellAttack.FAILED_REQUIRED_RUNES;
-				}
-			};
-		    } else {
-			requirements[i++] = new RuneRequirement(rune.getId(), rune.getCount()) {
-				@Override
-				public String getFailMessage() {
-					return SpellAttack.FAILED_REQUIRED_RUNES;
-				}
-			};
+		for (Item rune : runesRequired) {
+		    requirements[i++] = new RuneRequirement(rune.getId(), rune.getCount()) {
+		    @Override
+		    public String getFailMessage() {
+			return SpellAttack.FAILED_REQUIRED_RUNES;
 		    }
+		    };
 		}
 		requirements[i] = new SkillLevelRequirement(Skill.MAGIC, spell.getLevelRequired()) {
 			@Override
@@ -299,49 +482,6 @@ public abstract class MagicSkill extends CycleEvent {
 
 	}
 	
-	private static int swapForComboRunes(Player player, int runeId) {
-	    switch(runeId) {
-		default:
-		    return 0;
-		case 556: //Air rune
-		    if(player.getInventory().playerHasItem(4696)) {
-			return 4696; //Dust
-		    } else if(player.getInventory().playerHasItem(4695)) {
-			return 4695; //Mist
-		    } else if(player.getInventory().playerHasItem(4697)) {
-			return 4697; //Smoke
-		    }
-		return 0;
-		case 555: //Water rune
-		    if(player.getInventory().playerHasItem(4695)) {
-			return 4695; //Mist
-		    } else if(player.getInventory().playerHasItem(4698)) {
-			return 4698; //Mud
-		    } else if (player.getInventory().playerHasItem(4694)) {
-			return 4694; //Steam
-		    }
-		return 0;
-		case 557: //Earth rune
-		    if(player.getInventory().playerHasItem(4696)) {
-			return 4696; //Dust
-		    } else if(player.getInventory().playerHasItem(4698)) {
-			return 4698; //Mud
-		    } else if(player.getInventory().playerHasItem(4699)) {
-			return 4699; //Lava
-		    }
-		return 0;
-		case 554: //Fire rune
-		    if(player.getInventory().playerHasItem(4697)) {
-			return 4697; //Smoke
-		    } else if (player.getInventory().playerHasItem(4694)) {
-			return 4694; //Steam
-		    } else if(player.getInventory().playerHasItem(4699)) {
-			return 4699; //Lava
-		    }
-		return 0;
-	    }
-	}
-	
 	public static void spellButtonClicked(final Player player, final Spell spell) {
 		MagicSkill magicSkill = new MagicSkill(player, spell) {
 			@SuppressWarnings("incomplete-switch")
@@ -378,7 +518,13 @@ public abstract class MagicSkill extends CycleEvent {
 					case CAMELOT :
 						return player.getTeleportation().attemptTeleport(new Position(Constants.CAMELOT_X + Misc.random(1), Constants.CAMELOT_Y + Misc.random(1), 0));
 					case ARDOUGNE :
-						return player.getTeleportation().attemptTeleport(new Position(Constants.ARDOUGNE_X + Misc.random(1), Constants.ARDOUGNE_Y + Misc.random(1), 0));
+						if(player.getQuestVars().canTeleportArdougne()) {
+							return player.getTeleportation().attemptTeleport(new Position(Constants.ARDOUGNE_X + Misc.random(1), Constants.ARDOUGNE_Y + Misc.random(1), 0));
+						} else {
+							player.getDialogue().sendStatement("You must complete Plague City to use this.");
+							player.getDialogue().endDialogue();
+							return false;
+						}
 					case WATCHTOWER :
 						return player.getTeleportation().attemptTeleport(new Position(Constants.WATCH_TOWER_X + Misc.random(1), Constants.WATCH_TOWER_Y + Misc.random(1), 0));
 					case TROLLHEIM :
@@ -415,7 +561,16 @@ public abstract class MagicSkill extends CycleEvent {
 		};
 		magicSkill.initialize();
 	}
-
+	
+	public static boolean telegrabExceptions(final Player player, final int itemId, final Position itemPos) {
+		if(player.Area(3264, 3274, 3404, 3407) && itemId >= 415 && itemId <= 417 && Misc.goodDistance(player.getPosition(), itemPos, 10))
+			return true; //Vials for Biohazard quest, over east varrock fence
+		if(itemPos.Area(3187, 3196, 9818, 9824, itemPos.getX(), itemPos.getY()) && (player.getPosition().equals(new Position(3191, 9825, 0)) || player.getPosition().equals(new Position(3192, 9825, 0))))
+			return true; //Items in west varrock bank vault
+		
+		return false;
+	}
+	
 	public static void spellOnGroundItem(final Player player, final Spell spell, final int itemId, final Position itemPos) {
 		final int task = player.getTask();
 		CycleEventHandler.getInstance().addEvent(player, new CycleEvent() {
@@ -432,12 +587,16 @@ public abstract class MagicSkill extends CycleEvent {
 						if(itemId == 1537) {
 						    break;
 						}
-						if(itemId == 1583) { //firebird feather
+						if(itemId == 1583 || (itemId >= 20 && itemId <= 23)) {
 						    player.getActionSender().sendMessage("You cannot telegrab this item.");
 						    return;
 						}
 						if ((!Misc.checkClip(player.getPosition(), itemPos, false) || !Misc.goodDistance(player.getPosition(), itemPos, 10)) && !player.inTelekineticTheatre()) {
-							return;
+							if(MagicSkill.telegrabExceptions(player, itemId, itemPos)) {
+								
+							} else {
+								return;
+							}
 						}
 						if (player.getPosition().equals(itemPos)) {
 							player.getFollowing().stepAway();
@@ -510,6 +669,9 @@ public abstract class MagicSkill extends CycleEvent {
 			return true;
 		}
 		switch (buttonId) {
+			case 94047: //Autocast defense mode
+			    player.getActionSender().sendMessage("This combat method is not available at the moment.", true);
+			    return true;
 			case 1093 :
 				Item weapon = player.getEquipment().getItemContainer().get(Constants.WEAPON);
 				if (player.getMagicBookType() == SpellBook.ANCIENT) {
